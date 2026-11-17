@@ -502,6 +502,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
+const APP_VERSION = '2026-11-17-gallery';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -5065,6 +5066,23 @@ $('openGallery').onclick = () => { renderGallery(); showView('gallery'); };
 $('galleryBack').onclick = () => showView('profile');
 $('galPetsTab').onclick = () => { $('galPets').style.display = ''; $('galCos').style.display = 'none'; $('galPetsTab').className = 'bfight'; $('galCosTab').className = 'btn-soft'; };
 $('galCosTab').onclick = () => { $('galPets').style.display = 'none'; $('galCos').style.display = ''; $('galCosTab').className = 'bfight'; $('galPetsTab').className = 'btn-soft'; };
+
+// Auto-update: if the site has a newer version than this copy, reload it (so home-screen copies update too).
+(function checkForUpdate() {
+  let last = 0;
+  try { last = Number(sessionStorage.getItem('hp_reload') || 0); } catch (e) {}
+  if (Date.now() - last < 60000) return;
+  fetch('./index.html?check=' + Date.now(), { cache: 'no-store' })
+    .then(r => r.text())
+    .then(t => {
+      const m = t.match(/const APP_VERSION = '([^']+)'/);
+      if (m && m[1] !== APP_VERSION) {
+        try { sessionStorage.setItem('hp_reload', String(Date.now())); } catch (e) {}
+        location.replace('./?v=' + Date.now());
+      }
+    })
+    .catch(() => {});
+})();
 </script>
 </body>
 </html>
