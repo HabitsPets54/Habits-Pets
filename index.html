@@ -397,7 +397,14 @@ input { -webkit-user-select: text; user-select: text; }
     </section>
     <section class="card"><button id="openStats" class="bfight" style="width:100%">📊 View stats</button></section>
     <section class="card"><button id="logoutBtn" class="btn-soft" style="width:100%">Log out</button></section>
+    <section class="card"><button id="openGallery" class="btn-soft" style="width:100%">🖼 Gallery</button></section>
     <section class="card"><button id="resetBtn" class="bfight" style="background:#d9534f;width:100%">Reset everything</button><p class="foot" style="margin:8px 0 0">Clears coins, pets, habits, streaks, stats, and achievements on this device.</p></section>
+  </section>
+  <section class="view" id="view-gallery">
+    <div class="top"><button class="btn-soft" id="galleryBack" style="min-width:96px">‹ Profile</button><h1 style="flex:1;text-align:right;white-space:nowrap;font-size:22px;margin:0 0 0 12px">Gallery</h1></div>
+    <div style="display:flex;gap:10px;margin-bottom:12px"><button class="bfight" id="galPetsTab" style="flex:1">Pets</button><button class="btn-soft" id="galCosTab" style="flex:1">Cosmetics</button></div>
+    <section class="card" id="galPets"><div class="grid" id="galPetGrid"></div></section>
+    <section class="card" id="galCos" style="display:none"><div class="grid" id="galCosGrid"></div></section>
   </section>
   <section class="view" id="view-resetconfirm">
     <div class="top"><button class="btn-soft" id="resetNo" style="min-width:96px">‹ Profile</button><h1 style="flex:1;text-align:right;white-space:nowrap;font-size:22px;margin:0 0 0 12px">Reset?</h1></div>
@@ -2804,7 +2811,7 @@ COS.rings = [
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
   $('view-' + name).classList.add('on');
-  const tab = name === 'cos' || name === 'pets' ? 'shop' : name === 'coins' ? 'home' : name === 'statspage' || name === 'resetconfirm' ? 'profile' : name === 'pick' || name === 'leaderboard' || name === 'duelpick' || name === 'duelwait' || name === 'duelfight' || name === 'duels' || name === 'tug' || name === 'tugmenu' || name === 'tugboard' ? 'boss' : name;
+  const tab = name === 'cos' || name === 'pets' ? 'shop' : name === 'coins' ? 'home' : name === 'statspage' || name === 'resetconfirm' || name === 'gallery' ? 'profile' : name === 'pick' || name === 'leaderboard' || name === 'duelpick' || name === 'duelwait' || name === 'duelfight' || name === 'duels' || name === 'tug' || name === 'tugmenu' || name === 'tugboard' ? 'boss' : name;
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   if (name === 'cos') renderCos();
   setCoinsUI();
@@ -4407,10 +4414,16 @@ async function authGo() {
   const email = $('authEmail').value.trim(), pass = $('authPass').value, user = $('authUser').value.trim();
   $('authErr').textContent = '';
   if (!email || pass.length < 6) { $('authErr').textContent = 'Enter an email and a password of at least 6 characters.'; return; }
+  if (authMode === 'signup' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { $('authErr').textContent = 'Invalid email. Please enter a real email address, like name@example.com.'; return; }
   if (authMode === 'signup') {
     if (!/^[A-Za-z0-9_]{3,16}$/.test(user)) { $('authErr').textContent = 'Username: 3 to 16 letters, numbers or _.'; return; }
     const { data, error } = await SB.auth.signUp({ email, password: pass });
-    if (error) { $('authErr').textContent = error.message; return; }
+    if (error) {
+      const m = error.message || '';
+      if (/rate limit/i.test(m)) $('authErr').textContent = 'Too many sign-up emails were sent. Please wait about an hour and try again.';
+      else $('authErr').textContent = /email|database error/i.test(m) ? 'Invalid email address. Please use a real email.' : m;
+      return;
+    }
     if (!data.session) { $('authErr').textContent = 'Check your email to confirm your account, then log in.'; return; }
     // First sign-up uploads the progress already on this phone.
     if (state.owner) state = fresh();
@@ -4645,16 +4658,24 @@ function openFight(duelId, oppId, myName, myPet, oppName, theirPet, myP) {
       if (fight && payload.u !== me.id) { fight.oMax = payload.maxHp; fight.oIdx = payload.idx; fight.oLvl = payload.lvl; if (!fight.opHTML) { fight.opHTML = true; $('fpOp').innerHTML = petHTML(payload.idx, payload.lvl); } if (fight.ohp == null) fight.ohp = payload.maxHp; }
     })
     .on('broadcast', { event: 'hit' }, ({ payload }) => {
-      if (fight && payload.t === me.id) applyHit(payload.dmg, payload.u);
+      if (fight && payload.t === me.id) applyHit(payload.dmg, payload.u, !!payload.sp);
     })
     .on('broadcast', { event: 'parried' }, ({ payload }) => {
       if (fight && payload.t === me.id) { fight.stun = 1.2; fight.swing = 0; fight.floats.push({ x: fight.ox, t: 0.8, text: 'PARRIED', col: '#7bd389' }); }
     })
     .on('broadcast', { event: 'stun' }, ({ payload }) => {
-      if (fight && payload.t === me.id) { fight.stun = Math.max(fight.stun, payload.v); fight.swing = 0; fight.floats.push({ x: fight.x, t: 0.8, text: 'STUNNED', col: '#7bd389' }); }
+      if (fight && payload.t === me.id) {
+        let v = payload.v;
+        if (fight.parry > 0) { fight.parry = 0; v = v / 2; fight.floats.push({ x: fight.x, t: 0.8, text: 'HALF!', col: '#7bd389' }); }
+        fight.stun = Math.max(fight.stun, v); fight.swing = 0; fight.floats.push({ x: fight.x, t: 0.8, text: 'STUNNED', col: '#7bd389' });
+      }
     })
     .on('broadcast', { event: 'slow' }, ({ payload }) => {
-      if (fight && payload.t === me.id) { fight.slowP = payload.v; fight.floats.push({ x: fight.x, t: 0.8, text: 'SLOWED', col: '#9be7ff' }); }
+      if (fight && payload.t === me.id) {
+        let v = payload.v;
+        if (fight.parry > 0) { fight.parry = 0; v = v / 2; fight.floats.push({ x: fight.x, t: 0.8, text: 'HALF!', col: '#7bd389' }); }
+        fight.slowP = v; fight.floats.push({ x: fight.x, t: 0.8, text: 'SLOWED', col: '#9be7ff' });
+      }
     })
     .on('broadcast', { event: 'ko' }, ({ payload }) => {
       if (fight && payload.u !== me.id && !fight.result) endFight('won');
@@ -4733,7 +4754,7 @@ function fightFrameBody(now) {
         } else {
           const base = f.special ? f.atk * (f.spV || 2) : f.atk;
           const dmg = Math.round(base * ((f.rageT || 0) > 0 ? 1.5 : 1));
-          send('hit', { dmg });
+          send('hit', { dmg, sp: f.special ? 1 : 0 });
           f.floats.push({ x: f.ox, t: 0.8, text: '-' + dmg, col: '#ffd166' });
           if ((f.lsT || 0) > 0) f.hp = Math.min(f.maxHp, f.hp + Math.round(dmg * 0.5));
         }
@@ -4784,7 +4805,7 @@ function fightFrameBody(now) {
   $('fightSp').textContent = f.charge < 1 ? `★ ${Math.floor(f.charge * 100)}%` : '★ Special';
   f.raf = requestAnimationFrame(fightFrame);
 }
-function applyHit(dmg, from) {
+function applyHit(dmg, from, sp) {
   const f = fight;
   if (!f || f.result) return;
   if ((f.invT || 0) > 0) { f.floats.push({ x: f.x, t: 0.8, text: 'BLOCKED', col: '#9be7ff' }); return; }
@@ -4796,9 +4817,14 @@ function applyHit(dmg, from) {
   }
   if (f.parry > 0) {
     f.parry = 0;
-    f.floats.push({ x: f.x, t: 0.8, text: 'PARRY!', col: '#7bd389' });
-    f.ch.send({ type: 'broadcast', event: 'parried', payload: { u: me.id, t: from } });
-    return;
+    if (sp) {
+      dmg = Math.max(1, Math.round(dmg * 0.5));
+      f.floats.push({ x: f.x, t: 0.8, text: 'HALF DAMAGE!', col: '#7bd389' });
+    } else {
+      f.floats.push({ x: f.x, t: 0.8, text: 'PARRY!', col: '#7bd389' });
+      f.ch.send({ type: 'broadcast', event: 'parried', payload: { u: me.id, t: from } });
+      return;
+    }
   }
   f.hp = Math.max(0, f.hp - dmg);
   f.floats.push({ x: f.x, t: 0.8, text: '-' + dmg, col: '#ff6b6b' });
@@ -5020,6 +5046,25 @@ $('tugLeave').onclick = () => {
   stopTug();
   showView('boss');
 };
+
+// GALLERY: every pet you own, and every cosmetic you own.
+function renderGallery() {
+  $('galPetGrid').innerHTML = state.pets.map(p => {
+    const pet = PETS[p.idx];
+    const face = pet.art && pet.art[p.level - 1] ? `<div style='width:44px;height:44px;margin:0 auto'>${pet.art[p.level - 1]}</div>` : pet.stages[p.level - 1];
+    return `<div class='tile'><div class='e'>${face}</div><div class='n'>${p.nick || pet.n}</div><div class='s'>Lv ${p.level}</div></div>`;
+  }).join('') || 'No pets yet.';
+  const owned = (state.cos && state.cos.owned) || [];
+  const items = [];
+  COS.hats.filter(h => owned.includes(h.id)).forEach(h => items.push(`<div class='tile'><div class='e'>${HAT_SVG[h.id] ? `<div style='width:44px;height:44px;margin:0 auto'>${HAT_SVG[h.id]}</div>` : h.e}</div><div class='n'>${h.n}</div><div class='s'>Hat</div></div>`));
+  COS.themes.filter(t => owned.includes(t.id)).forEach(t => items.push(`<div class='tile'><div class='e' style='height:44px;border-radius:12px;background:linear-gradient(135deg,${t.c[0]},${t.c[1]})'></div><div class='n'>${t.n}</div><div class='s'>Theme</div></div>`));
+  COS.rings.filter(r => owned.includes(r.id)).forEach(r => items.push(`<div class='tile'><div class='e'><div style='width:40px;height:40px;margin:0 auto;border-radius:50%;border:4px solid ${RING_COLORS[r.id]}'></div></div><div class='n'>${r.n}</div><div class='s'>Ring</div></div>`));
+  $('galCosGrid').innerHTML = items.join('') || 'No cosmetics yet.';
+}
+$('openGallery').onclick = () => { renderGallery(); showView('gallery'); };
+$('galleryBack').onclick = () => showView('profile');
+$('galPetsTab').onclick = () => { $('galPets').style.display = ''; $('galCos').style.display = 'none'; $('galPetsTab').className = 'bfight'; $('galCosTab').className = 'btn-soft'; };
+$('galCosTab').onclick = () => { $('galPets').style.display = 'none'; $('galCos').style.display = ''; $('galCosTab').className = 'bfight'; $('galPetsTab').className = 'btn-soft'; };
 </script>
 </body>
 </html>
