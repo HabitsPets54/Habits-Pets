@@ -403,6 +403,7 @@ input { -webkit-user-select: text; user-select: text; }
   <section class="view" id="view-gallery">
     <div class="top"><button class="btn-soft" id="galleryBack" style="min-width:96px">‹ Profile</button><h1 style="flex:1;text-align:right;white-space:nowrap;font-size:22px;margin:0 0 0 12px">Gallery</h1></div>
     <div style="display:flex;gap:10px;margin-bottom:12px"><button class="bfight" id="galPetsTab" style="flex:1">Pets</button><button class="btn-soft" id="galCosTab" style="flex:1">Cosmetics</button></div>
+    <p id="galCount" class="foot" style="text-align:center;margin:0 0 10px"></p>
     <section class="card" id="galPets"><div class="grid" id="galPetGrid"></div></section>
     <section class="card" id="galCos" style="display:none"><div class="grid" id="galCosGrid"></div></section>
   </section>
@@ -502,7 +503,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-17-gallery';
+const APP_VERSION = '2026-11-17-test-v2';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -4492,7 +4493,7 @@ async function loadLeaderboard() {
   const { data, error } = await SB.from('leaderboard').select('id, username, avatar, wins, losses').order('wins', { ascending: false }).limit(20);
   if (error) { $('lbBox').textContent = 'Leaderboard unavailable right now.'; return; }
   lbRows = data || [];
-  $('lbBox').innerHTML = lbRows.length ? lbRows.map((r, i) => `<button class="btn-soft" data-lb="${i}" style="width:100%;display:flex;align-items:center;gap:10px;margin:6px 0;text-align:left"><span style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center;flex:none">${r.avatar ? `<img src="${r.avatar}" style="width:100%;height:100%;object-fit:cover">` : '🙂'}</span><span style="flex:1;font-weight:700">${i + 1}. ${r.username}</span><span>${r.wins}W · ${r.losses}L</span></button>`).join('') : 'No duels yet. Be the first!';
+  $('lbBox').innerHTML = lbRows.length ? lbRows.map((r, i) => `<button class="btn-soft" data-lb="${i}" style="width:100%;display:flex;align-items:center;gap:10px;margin:6px 0;text-align:left"><span style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center;flex:none">${r.avatar ? `<img src="${r.avatar}" style="width:100%;height:100%;object-fit:cover">` : '🙂'}</span><span style="flex:1;font-weight:700">${i + 1}. ${r.username}${me && r.id === me.id ? ' (you)' : ''}</span><span>${r.wins}W · ${r.losses}L</span></button>`).join('') : 'No duels yet. Be the first!';
 }
 $('lbBox').onclick = e => {
   const b = e.target.closest('[data-lb]');
@@ -4521,7 +4522,7 @@ async function loadTugLeaderboard() {
   const { data, error } = await SB.from('tug_leaderboard').select('id, username, avatar, wins, losses').order('wins', { ascending: false }).limit(20);
   if (error) { $('tugLbBox').textContent = 'Leaderboard unavailable right now.'; return; }
   tugRows = data || [];
-  $('tugLbBox').innerHTML = tugRows.length ? tugRows.map((r, i) => `<button class="btn-soft" data-tlb="${i}" style="width:100%;display:flex;align-items:center;gap:10px;margin:6px 0;text-align:left"><span style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center;flex:none">${r.avatar ? `<img src="${r.avatar}" style="width:100%;height:100%;object-fit:cover">` : '🙂'}</span><span style="flex:1;font-weight:700">${i + 1}. ${r.username}</span><span>${r.wins}W · ${r.losses}L</span></button>`).join('') : 'No Tug-of-War matches yet. Be the first!';
+  $('tugLbBox').innerHTML = tugRows.length ? tugRows.map((r, i) => `<button class="btn-soft" data-tlb="${i}" style="width:100%;display:flex;align-items:center;gap:10px;margin:6px 0;text-align:left"><span style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center;flex:none">${r.avatar ? `<img src="${r.avatar}" style="width:100%;height:100%;object-fit:cover">` : '🙂'}</span><span style="flex:1;font-weight:700">${i + 1}. ${r.username}${me && r.id === me.id ? ' (you)' : ''}</span><span>${r.wins}W · ${r.losses}L</span></button>`).join('') : 'No Tug-of-War matches yet. Be the first!';
 }
 $('tugLbBox').onclick = e => {
   const b = e.target.closest('[data-tlb]');
@@ -4662,7 +4663,7 @@ function openFight(duelId, oppId, myName, myPet, oppName, theirPet, myP) {
       if (fight && payload.t === me.id) applyHit(payload.dmg, payload.u, !!payload.sp);
     })
     .on('broadcast', { event: 'parried' }, ({ payload }) => {
-      if (fight && payload.t === me.id) { fight.stun = 1.2; fight.swing = 0; fight.floats.push({ x: fight.ox, t: 0.8, text: 'PARRIED', col: '#7bd389' }); }
+      if (fight && payload.t === me.id) { fight.stun = 1.2; fight.swing = 0; fight.floats.push({ x: fight.ox, t: 0.8, text: 'PARRIED', col: '#7bd389' }); fight.banner = { text: 'PARRIED!', col: '#ffd166', t: 1.2 }; }
     })
     .on('broadcast', { event: 'stun' }, ({ payload }) => {
       if (fight && payload.t === me.id) {
@@ -4802,6 +4803,15 @@ function fightFrameBody(now) {
     c.fillStyle = t.col;
     c.fillText(t.text, t.x * W, gy - r - 30 - (0.8 - t.t) * 60);
   }
+  if (f.banner && f.banner.t > 0) {
+    f.banner.t -= dt;
+    c.globalAlpha = Math.min(1, f.banner.t);
+    c.font = 'bold 24px sans-serif';
+    c.textAlign = 'center';
+    c.fillStyle = f.banner.col;
+    c.fillText(f.banner.text, W / 2, H * 0.42);
+    c.globalAlpha = 1;
+  }
   $('fightSp').disabled = f.charge < 1 || !!f.result;
   $('fightSp').textContent = f.charge < 1 ? `★ ${Math.floor(f.charge * 100)}%` : '★ Special';
   f.raf = requestAnimationFrame(fightFrame);
@@ -4821,8 +4831,10 @@ function applyHit(dmg, from, sp) {
     if (sp) {
       dmg = Math.max(1, Math.round(dmg * 0.5));
       f.floats.push({ x: f.x, t: 0.8, text: 'HALF DAMAGE!', col: '#7bd389' });
+      f.banner = { text: 'HALF DAMAGE!', col: '#7bd389', t: 1.2 };
     } else {
       f.floats.push({ x: f.x, t: 0.8, text: 'PARRY!', col: '#7bd389' });
+      f.banner = { text: 'PARRY!', col: '#7bd389', t: 1.2 };
       f.ch.send({ type: 'broadcast', event: 'parried', payload: { u: me.id, t: from } });
       return;
     }
@@ -5050,6 +5062,10 @@ $('tugLeave').onclick = () => {
 
 // GALLERY: every pet you own, and every cosmetic you own.
 function renderGallery() {
+  const ownedIds = (state.cos && state.cos.owned) || [];
+  const ownedCos = COS.hats.filter(h => ownedIds.includes(h.id)).length + COS.themes.filter(t => ownedIds.includes(t.id)).length + COS.rings.filter(r => ownedIds.includes(r.id)).length;
+  const totalCos = COS.hats.length + COS.themes.length + COS.rings.length;
+  $('galCount').textContent = `Pets: ${state.pets.length} / ${PETS.length} · Cosmetics: ${ownedCos} / ${totalCos}`;
   $('galPetGrid').innerHTML = state.pets.map(p => {
     const pet = PETS[p.idx];
     const face = pet.art && pet.art[p.level - 1] ? `<div style='width:44px;height:44px;margin:0 auto'>${pet.art[p.level - 1]}</div>` : pet.stages[p.level - 1];
