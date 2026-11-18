@@ -512,7 +512,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-17-headers';
+const APP_VERSION = '2026-11-17-fix-preview';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -2555,7 +2555,7 @@ function playSpecialPreview(override) {
   requestAnimationFrame(frame);
   $('spClose').onclick = () => { live = false; ov.classList.remove('on'); };
 }
-$('spPreviewBtn').onclick = playSpecialPreview;
+$('spPreviewBtn').onclick = () => playSpecialPreview();
 $('dailyBtn').onclick = openDaily;
 // Boss stakes: only the first fight each day wins or loses coins. Later fights are free practice.
 function bossUsedToday() { return !!state.bossToday && state.bossToday.day === todayKey(); }
@@ -2803,10 +2803,10 @@ COS.hats.push(
   { id: 'ufo', n: 'UFO', e: '🛸', price: 280 }, { id: 'leaf', n: 'Leaf crown', e: '🍃', price: 90 }
 );
 COS.themes.push(
-  { id: 'midnight', n: 'Midnight', c: ['#303f9f', '#1a237e'], price: 100 }, { id: 'mint', n: 'Mint', c: ['#a7f3d0', '#34d399'], price: 70 },
-  { id: 'lava', n: 'Lava', c: ['#ff7043', '#b71c1c'], price: 140 }, { id: 'sakura', n: 'Sakura', c: ['#fbcfe8', '#f472b6'], price: 90 },
+  { id: 'indigo', n: 'Indigo', c: ['#5c6bc0', '#283593'], price: 100 }, { id: 'seaglass', n: 'Sea glass', c: ['#b2f5ea', '#4fd1c5'], price: 70 },
+  { id: 'ember', n: 'Ember', c: ['#ffab91', '#d84315'], price: 140 }, { id: 'sakura', n: 'Sakura', c: ['#fbcfe8', '#f472b6'], price: 90 },
   { id: 'desert', n: 'Desert', c: ['#fde68a', '#d97706'], price: 80 }, { id: 'arctic', n: 'Arctic', c: ['#e0f2fe', '#38bdf8'], price: 100 },
-  { id: 'neon', n: 'Neon', c: ['#00e5ff', '#ff3cac'], price: 220 }, { id: 'rainbowT', n: 'Rainbow', c: ['#ff9a9e', '#a18cd1'], price: 160 }
+  { id: 'cyber', n: 'Cyber', c: ['#00e5ff', '#ff3cac'], price: 220 }, { id: 'rainbowT', n: 'Rainbow', c: ['#ff9a9e', '#a18cd1'], price: 160 }
 );
 COS.rings = [
   { id: 'crimson', n: 'Crimson', price: 120 }, { id: 'indigo', n: 'Indigo', price: 120 }, { id: 'magenta', n: 'Magenta', price: 130 }, { id: 'seafoam', n: 'Seafoam', price: 110 }, { id: 'skyblue', n: 'Sky blue', price: 100 }, { id: 'amber', n: 'Amber', price: 110 }, { id: 'pearlring', n: 'Pearl', price: 150 }, { id: 'chartreuse', n: 'Chartreuse', price: 120 }, { id: 'orchid', n: 'Orchid', price: 130 }, { id: 'brass', n: 'Brass', price: 140 }, { id: 'steel', n: 'Steel', price: 140 }, { id: 'plum', n: 'Plum', price: 130 },
