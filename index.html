@@ -404,6 +404,7 @@ input { -webkit-user-select: text; user-select: text; }
       <button id="pickPhoto" class="btn-soft" style="margin-top:10px">Change photo</button>
       <input id="photoFile" type="file" accept="image/*" style="display:none">
     </section>
+    <section class="card"><h2>Connection</h2><div id="sbStatus" class="sub" style="word-break:break-word;line-height:1.5">Not checked yet</div><button class="btn-soft" id="sbTest" style="margin-top:8px;width:100%">Test connection</button></section>
     <section class="card"><button id="openStats" class="bfight" style="width:100%">📊 View stats</button></section>
     <section class="card"><button id="logoutBtn" class="btn-soft" style="width:100%">Log out</button></section>
     <section class="card"><button id="openGallery" class="btn-soft" style="width:100%">🖼 Gallery</button></section>
@@ -512,7 +513,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-20-1';
+const APP_VERSION = '2026-11-20-3';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -4589,10 +4590,12 @@ async function joinDuel(pi) {
   if (!SB || !me) { toast('Sign in to play Duels.'); return; }
   const p = state.pets[pi];
   duelPi = pi; toast('Joining the queue…');
+  matchStarting = false;
+  duelSeen = await snapshotDuelIds();
   try {
     const { data, error } = await SB.rpc('find_duel', { my_pet_idx: p.idx, my_pet_level: p.level, my_pet_nick: p.nick || '', my_mode: 'duel' });
     if (error) { toast('Queue error: ' + error.message); $('duelErr').textContent = 'Queue error: ' + error.message; return; }
-    if (data) { toast('Opponent found!'); startMatch(data); return; }
+    if (data) { matchStarting = true; toast('Opponent found!'); startMatch(data); return; }
     $('duelStatus').textContent = 'Waiting for an opponent…';
     showView('duelwait');
     watchForMatch();
@@ -4601,17 +4604,41 @@ async function joinDuel(pi) {
     $('duelErr').textContent = 'Queue error: ' + err.message;
   }
 }
+let duelSeen = new Set(), duelPoll = null, matchStarting = false;
+async function snapshotDuelIds() {
+  const ids = new Set();
+  try {
+    const { data } = await SB.from('duels').select('id').or(`player_a.eq.${me.id},player_b.eq.${me.id}`).limit(1000);
+    (data || []).forEach(r => ids.add(r.id));
+  } catch (e) {}
+  return ids;
+}
 function watchForMatch() {
   stopWatch();
+  const found = id => {
+    if (matchStarting || duelSeen.has(id)) return;
+    matchStarting = true;
+    startMatch(id);
+  };
   duelChannel = SB.channel('duels-' + me.id)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'duels' }, payload => {
       const d = payload.new;
-      if (d.player_a === me.id || d.player_b === me.id) startMatch(d.id);
+      if (d.player_a === me.id || d.player_b === me.id) found(d.id);
     })
     .subscribe();
+  // Fallback: if a live event is missed, check the duels table every 2 seconds.
+  duelPoll = setInterval(async () => {
+    if (matchStarting) return;
+    try {
+      const { data } = await SB.from('duels').select('id').or(`player_a.eq.${me.id},player_b.eq.${me.id}`).limit(1000);
+      const fresh = (data || []).find(r => !duelSeen.has(r.id));
+      if (fresh) found(fresh.id);
+    } catch (e) {}
+  }, 2000);
 }
 function stopWatch() {
   if (duelChannel) { SB.removeChannel(duelChannel); duelChannel = null; }
+  if (duelPoll) { clearInterval(duelPoll); duelPoll = null; }
 }
 async function startMatch(duelId) {
   stopWatch();
@@ -5194,6 +5221,34 @@ PETS.forEach(p => {
   sp.v = Math.round(SPEC_BASE[sp.t] * m * 10) / 10;
   sp.scaled = true;
 });
+
+// CONNECTION CHECK: tests the Supabase library, the tables, and the login state. Shown on the Profile tab.
+async function checkSupabase() {
+  const el = document.getElementById('sbStatus');
+  if (!el) return;
+  const lines = [];
+  if (!AUTH_ON || !SB) { el.textContent = 'Supabase is turned off in the code (AUTH_ON is false).'; return; }
+  if (typeof supabase === 'undefined' || !supabase.createClient) {
+    el.innerHTML = '❌ Supabase library did not load. Check the internet connection, or the script tag on line 10.';
+    return;
+  }
+  el.textContent = 'Checking…';
+  try {
+    lines.push('✅ Library loaded and client created');
+    lines.push('Project: ' + SB_URL.replace('https://', ''));
+    const { error: e1 } = await SB.from('profiles').select('id', { count: 'exact', head: true });
+    lines.push(e1 ? '❌ profiles table: ' + e1.message : '✅ profiles table reachable');
+    const { error: e2 } = await SB.from('leaderboard').select('id', { count: 'exact', head: true });
+    lines.push(e2 ? '❌ leaderboard: ' + e2.message : '✅ leaderboard reachable');
+    const { data: s, error: e3 } = await SB.auth.getSession();
+    lines.push(e3 ? '❌ auth: ' + e3.message : (s && s.session ? '✅ Logged in as ' + (s.session.user.email || 'a user') : 'ℹ️ Not logged in'));
+  } catch (err) {
+    lines.push('❌ Network or client error: ' + (err && err.message ? err.message : err));
+  }
+  el.innerHTML = lines.map(l => l.replace(/</g, '&lt;')).join('<br>');
+}
+document.getElementById('sbTest').onclick = checkSupabase;
+setTimeout(checkSupabase, 1500);
 </script>
 </body>
 </html>
