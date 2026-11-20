@@ -512,7 +512,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-17-balance';
+const APP_VERSION = '2026-11-20-1';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
