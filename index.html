@@ -404,7 +404,6 @@ input { -webkit-user-select: text; user-select: text; }
       <button id="pickPhoto" class="btn-soft" style="margin-top:10px">Change photo</button>
       <input id="photoFile" type="file" accept="image/*" style="display:none">
     </section>
-    <section class="card"><h2>Connection</h2><div id="sbStatus" class="sub" style="word-break:break-word;line-height:1.5">Not checked yet</div><button class="btn-soft" id="sbTest" style="margin-top:8px;width:100%">Test connection</button></section>
     <section class="card"><button id="openStats" class="bfight" style="width:100%">📊 View stats</button></section>
     <section class="card"><button id="logoutBtn" class="btn-soft" style="width:100%">Log out</button></section>
     <section class="card"><button id="openGallery" class="btn-soft" style="width:100%">🖼 Gallery</button></section>
@@ -513,7 +512,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-20-3';
+const APP_VERSION = '2026-11-20-4';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -5221,34 +5220,6 @@ PETS.forEach(p => {
   sp.v = Math.round(SPEC_BASE[sp.t] * m * 10) / 10;
   sp.scaled = true;
 });
-
-// CONNECTION CHECK: tests the Supabase library, the tables, and the login state. Shown on the Profile tab.
-async function checkSupabase() {
-  const el = document.getElementById('sbStatus');
-  if (!el) return;
-  const lines = [];
-  if (!AUTH_ON || !SB) { el.textContent = 'Supabase is turned off in the code (AUTH_ON is false).'; return; }
-  if (typeof supabase === 'undefined' || !supabase.createClient) {
-    el.innerHTML = '❌ Supabase library did not load. Check the internet connection, or the script tag on line 10.';
-    return;
-  }
-  el.textContent = 'Checking…';
-  try {
-    lines.push('✅ Library loaded and client created');
-    lines.push('Project: ' + SB_URL.replace('https://', ''));
-    const { error: e1 } = await SB.from('profiles').select('id', { count: 'exact', head: true });
-    lines.push(e1 ? '❌ profiles table: ' + e1.message : '✅ profiles table reachable');
-    const { error: e2 } = await SB.from('leaderboard').select('id', { count: 'exact', head: true });
-    lines.push(e2 ? '❌ leaderboard: ' + e2.message : '✅ leaderboard reachable');
-    const { data: s, error: e3 } = await SB.auth.getSession();
-    lines.push(e3 ? '❌ auth: ' + e3.message : (s && s.session ? '✅ Logged in as ' + (s.session.user.email || 'a user') : 'ℹ️ Not logged in'));
-  } catch (err) {
-    lines.push('❌ Network or client error: ' + (err && err.message ? err.message : err));
-  }
-  el.innerHTML = lines.map(l => l.replace(/</g, '&lt;')).join('<br>');
-}
-document.getElementById('sbTest').onclick = checkSupabase;
-setTimeout(checkSupabase, 1500);
 </script>
 </body>
 </html>
