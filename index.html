@@ -220,6 +220,54 @@ input { -webkit-user-select: text; user-select: text; }
 .brand-title { display:flex; align-items:center; gap:9px; white-space:nowrap; font-size:20px; margin:0; }
 .brand-logo { width:44px; height:44px; object-fit:cover; border-radius:12px; flex-shrink:0; box-shadow:0 3px 10px rgba(100,55,20,.14); }
 @media (max-width:360px) { .brand-logo { width:34px; height:34px; border-radius:10px; } }
+
+  .bb-top { margin:6px 0 14px; }
+  .bb-row1 { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .bb-title { font-size:22px; margin:12px 0 0; text-align:center; }
+  .bb-pill { display:flex; align-items:center; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; font-weight:800; }
+  .bb-sec { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:12px; margin-bottom:12px; }
+  .bb-h { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); text-align:center; margin-bottom:10px; }
+  .bb-merchantBox { display:flex; align-items:center; gap:12px; }
+  .bb-man { font-size:48px; flex-shrink:0; }
+  .bb-bubble { background:rgba(0,0,0,.2); border:1px solid var(--line); border-radius:14px; padding:10px 12px; font-size:15px; text-align:left; flex:1; }
+  .bb-menu { display:flex; flex-direction:column; gap:8px; }
+  .bb-item { display:flex; align-items:center; gap:12px; width:100%; background:rgba(0,0,0,.18); border:1px solid var(--line); border-radius:14px; padding:10px 12px; color:var(--text); font:inherit; text-align:left; cursor:pointer; }
+  .bb-item:disabled { opacity:.45; cursor:default; }
+  .bb-swatch { width:38px; height:38px; border-radius:12px; flex-shrink:0; box-shadow: inset 0 -3px 0 rgba(0,0,0,.25); }
+  .bb-txt { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .bb-txt small { color:var(--muted); font-size:12px; margin-top:2px; }
+  .bb-price { font-weight:800; color:var(--gold); font-size:14px; white-space:nowrap; }
+  .bb-ov { position:fixed; inset:0; background:#0b0a16; display:none; flex-direction:column; align-items:center; justify-content:center; padding:72px 20px 24px; z-index:30; }
+  .bb-ov.on { display:flex; }
+  .bb-center { width:100%; max-width:340px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px; }
+  .bb-cupwrap { position:relative; width:150px; height:150px; margin:8px auto; }
+  .bb-cup { width:150px; height:150px; border-radius:26px; display:flex; align-items:center; justify-content:center; font-size:72px; box-shadow: inset 0 -6px 0 rgba(0,0,0,.25); }
+  .bb-normal .bb-cup { animation: bbShake .4s infinite; }
+  .bb-lucky .bb-cup { animation: bbGlow 1s infinite alternate; }
+  .bb-spark, .bb-star, .bb-pearl { position:absolute; font-size:22px; }
+  .bb-spark { animation: bbTwinkle 1.2s infinite; }
+  .bb-spark.s1 { top:-6px; left:-6px; } .bb-spark.s2 { top:-10px; right:-4px; animation-delay:.4s; } .bb-spark.s3 { bottom:-6px; right:10px; animation-delay:.8s; }
+  .bb-star { font-size:36px; top:50%; left:50%; margin:-18px 0 0 -18px; animation: bbPop 1.6s ease-out infinite; }
+  .bb-pearl { font-size:14px; top:4px; animation: bbDrop 1s infinite; }
+  .bb-pearl.p1 { left:44px; } .bb-pearl.p2 { left:92px; animation-delay:.5s; }
+  .bb-status { color:var(--muted); font-size:14px; min-height:20px; }
+  .bb-picks { display:grid; grid-template-columns:repeat(auto-fill, 64px); justify-content:center; gap:10px; width:100%; }
+  .bb-pick { width:64px; height:64px; border-radius:14px; border:1px solid var(--line); background:rgba(0,0,0,.18); font-size:30px; cursor:pointer; color:var(--text); }
+  .bb-petWrap { position:relative; width:170px; height:170px; margin:0 auto; display:flex; align-items:center; justify-content:center; }
+  .bb-petEmoji { font-size:100px; animation: bbBounce .6s infinite alternate; }
+  .bb-cupFly { position:absolute; font-size:44px; right:-10px; top:20px; animation: bbFly 1.4s ease-in forwards; }
+  .bb-stars { display:flex; justify-content:center; gap:4px; }
+  .bb-stars button { background:none; border:none; font-size:36px; color:var(--gold); cursor:pointer; padding:0 2px; }
+  .bb-comment { width:100%; border-radius:12px; background:var(--card); color:var(--text); border:1px solid var(--line); padding:10px; font:inherit; resize:none; }
+  .bb-count { color:var(--muted); font-size:12px; }
+  .bb-reward { font-weight:800; color:var(--accent); font-size:15px; }
+  @keyframes bbShake { 0%,100% { transform:rotate(0); } 25% { transform:rotate(-6deg); } 75% { transform:rotate(6deg); } }
+  @keyframes bbGlow { from { box-shadow: 0 0 10px #ffd84a; } to { box-shadow: 0 0 30px #ffd84a; } }
+  @keyframes bbTwinkle { 0%,100% { opacity:.2; transform:scale(.8); } 50% { opacity:1; transform:scale(1.2); } }
+  @keyframes bbPop { 0% { transform:scale(0); opacity:0; } 40% { transform:scale(1.3); opacity:1; } 100% { transform:scale(1); opacity:0; } }
+  @keyframes bbDrop { 0% { transform:translateY(0); opacity:1; } 100% { transform:translateY(90px); opacity:0; } }
+  @keyframes bbBounce { from { transform:translateY(0); } to { transform:translateY(-10px); } }
+  @keyframes bbFly { 0% { transform:translate(0,0) rotate(0); } 100% { transform:translate(-110px,30px) rotate(-30deg) scale(.5); opacity:0; } }
 </style>
 </head>
 <body>
@@ -305,6 +353,7 @@ input { -webkit-user-select: text; user-select: text; }
     <div class="top"><h1>Shop</h1><div class="coins">🪙 <b id="coins6">0</b></div></div>
     <button class="shopCard" data-go="pets"><div class="sc-ico">🐾</div><div><b>Pets</b><div class="sub">Adopt and level up all 100 pets</div></div></button>
     <button class="shopCard" data-go="cos"><div class="sc-ico">🎩</div><div><b>Cosmetics</b><div class="sub">Hats for your pets and themes for your card</div></div></button>
+      <button class="shopCard" data-go="boba"><div class="sc-ico">🧋</div><div><b>Baobao Boba</b><div class="sub">Pick a boba, pick a pet, and rate it</div></div></button>
   </section>
   <section class="view" id="view-coins">
     <div class="top"><button class="btn-soft" id="coinsBack" style="min-width:96px">‹ Home</button><h1 style="flex:1;text-align:center">Your coins</h1><div style="min-width:96px"></div></div>
@@ -396,6 +445,18 @@ input { -webkit-user-select: text; user-select: text; }
     <section class="card"><h2>Pet rings</h2><div class="grid" id="cosRings"></div></section>
     <p class="foot">Hats sit on your pet. Themes color your pet card. Rings color the ring around your pet (from level 5). You can wear one hat, one theme, and one ring color at a time. Tap a worn item again to take it off.</p>
   </section>
+  <section class="view" id="view-boba">
+    <div class="bb-top">
+      <div class="bb-row1">
+        <button class="btn-soft" id="toShopBb">‹ Shop</button>
+        <div class="bb-pill"><span>🪙</span><b id="bbCoins">0</b></div>
+      </div>
+      <h1 class="bb-title">Baobao Boba</h1>
+    </div>
+    <div class="bb-sec bb-merchantBox"><div class="bb-man">👨‍🍳</div><div class="bb-bubble">What boba would you like?</div></div>
+    <div class="bb-sec"><div class="bb-h">Menu</div><div class="bb-menu" id="bbMenu"></div></div>
+  </section>
+  <div class="bb-ov" id="bbOv"></div>
   <section class="view" id="view-profile">
     <div class="top"><h1>Profile</h1></div>
     <section class="card" style="text-align:center">
@@ -512,7 +573,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-20-4';
+const APP_VERSION = '2026-11-21-1';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -863,7 +924,7 @@ const gameCv = $('gc'), gx = gameCv.getContext('2d');
 const BUB = { 1: '#7ef9ff', 2: '#7cff6b', 5: '#ffe066', 10: '#ff9f43', 50: '#ffd700', '-5': '#ff5252', '-10': '#b71c1c', bomb: '#ff6b00' };
 let gr = null;
 // Every coin counter in the app (home, boss, shop, cosmetics, game overlay) updates together.
-const COIN_IDS = ['coins1', 'coins2', 'coins3', 'coins4', 'coins6', 'cosCoins', 'gameCoins'];
+const COIN_IDS = ['coins1', 'coins2', 'coins3', 'coins4', 'coins6', 'cosCoins', 'gameCoins', 'bbCoins'];
 function setCoinsUI() { COIN_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = fmtCoins(state.coins); }); const ex = document.getElementById('coinsExact'); if (ex) ex.textContent = state.coins.toLocaleString(); }
 function addCoins(n) { state.coins = Math.max(0, state.coins + n); if (n > 0) { stat('coinsEarned', n); sfx('coin'); } save(); setCoinsUI(); checkAch(); }
 function sizeGame() { const r = devicePixelRatio || 1; gameCv.width = gameCv.clientWidth * r; gameCv.height = gameCv.clientHeight * r; gx.setTransform(r, 0, 0, r, 0, 0); }
@@ -2820,9 +2881,10 @@ COS.rings = [
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
   $('view-' + name).classList.add('on');
-  const tab = name === 'cos' || name === 'pets' ? 'shop' : name === 'coins' ? 'home' : name === 'statspage' || name === 'resetconfirm' || name === 'gallery' ? 'profile' : name === 'pick' || name === 'leaderboard' || name === 'duelpick' || name === 'duelwait' || name === 'duelfight' || name === 'duels' || name === 'tug' || name === 'tugmenu' || name === 'tugboard' ? 'boss' : name;
+  const tab = name === 'cos' || name === 'pets' || name === 'boba' ? 'shop' : name === 'coins' ? 'home' : name === 'statspage' || name === 'resetconfirm' || name === 'gallery' ? 'profile' : name === 'pick' || name === 'leaderboard' || name === 'duelpick' || name === 'duelwait' || name === 'duelfight' || name === 'duels' || name === 'tug' || name === 'tugmenu' || name === 'tugboard' ? 'boss' : name;
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   if (name === 'cos') renderCos();
+  if (name === 'boba') renderBoba();
   setCoinsUI();
   window.scrollTo(0, 0);
 }
@@ -5220,6 +5282,141 @@ PETS.forEach(p => {
   sp.v = Math.round(SPEC_BASE[sp.t] * m * 10) / 10;
   sp.scaled = true;
 });
+
+// BAOBAO BOBA
+const BB_FLAVOURS = [
+  { id: 'classic', name: 'Classic Milk Tea', price: 20, look: 'Light brown with pearls', c: ['#d9b48f', '#a8744a'] },
+  { id: 'strawberry', name: 'Strawberry Cloud', price: 25, look: 'Pink with cream on top', c: ['#ffb3c7', '#e0607e'] },
+  { id: 'matcha', name: 'Matcha Dream', price: 30, look: 'Green with a foam swirl', c: ['#b9e4a8', '#5f9e4a'] },
+  { id: 'brownsugar', name: 'Brown Sugar Pearl', price: 40, look: 'Dark amber with sugar streaks', c: ['#c98a3a', '#6b3d14'] },
+  { id: 'lucky', name: 'Lucky Star Boba', price: 0, look: 'Gold with sparkles', c: ['#ffe27a', '#d19a1a'], lucky: true }
+];
+// 10 starts x 10 endings = 100 possible things a pet can say
+const BB_START = ['Yummy', 'Mmm', 'Ooh', 'So', 'Tasty', 'Sweet', 'Oh wow', 'Delicious', 'Nom', 'Yay'];
+const BB_END = ['!', '!!', ', yum!', ' please!', ' more!', '~', ' so good!', ' again!', ' thank you!', ' ♪'];
+
+function bbState() { state.bb = state.bb || { freeDay: null, log: [] }; return state.bb; }
+function bbOv() { return $('bbOv'); }
+function bbShow(html) { const ov = bbOv(); ov.innerHTML = `<div class="bb-center">${html}</div>`; ov.classList.add('on'); }
+function bbClose() { bbOv().classList.remove('on'); renderBoba(); }
+function bbPhrase() { return BB_START[Math.floor(Math.random() * BB_START.length)] + BB_END[Math.floor(Math.random() * BB_END.length)]; }
+function bbWords(t) { const s = t.trim(); return s ? s.split(/\s+/).length : 0; }
+function bbReward(stars, words) { if (!stars) return 0; if (words >= 10) return 12; if (words >= 3) return 10; return 5; }
+
+function renderBoba() {
+  setCoinsUI();
+  const freeUsed = bbState().freeDay === todayKey();
+  $('bbMenu').innerHTML = BB_FLAVOURS.map(f => {
+    const off = f.lucky && freeUsed;
+    const price = f.lucky ? 'Free' : `🪙 ${f.price}`;
+    const sub = f.lucky ? (freeUsed ? 'Come back tomorrow' : 'Free, one per day') : f.look;
+    return `<button class="bb-item" data-id="${f.id}" ${off ? 'disabled' : ''}><span class="bb-swatch" style="background:linear-gradient(160deg,${f.c[0]},${f.c[1]})"></span><span class="bb-txt"><b>${f.name}</b><small>${sub}</small></span><span class="bb-price">${price}</span></button>`;
+  }).join('');
+}
+
+$('bbMenu').onclick = e => {
+  const b = e.target.closest('.bb-item');
+  if (!b || b.disabled) return;
+  bbOrder(BB_FLAVOURS.find(x => x.id === b.dataset.id));
+};
+
+function bbOrder(f) {
+  const b = bbState();
+  if (state.pets.length === 0) { toast('Unlock a pet first. Only unlocked pets can drink boba.'); return; }
+  if (f.lucky) {
+    if (b.freeDay === todayKey()) { toast('Come back tomorrow for your free boba'); return; }
+    b.freeDay = todayKey(); save();
+  } else {
+    if (state.coins < f.price) { toast('Not enough coins for this boba'); return; }
+    addCoins(-f.price);
+  }
+  bbMaking(f);
+}
+
+function bbMaking(f) {
+  const say = f.lucky ? "Ah, a lucky one! This one's on me." : 'Coming right up!';
+  bbShow(`<div class="bb-man">👨‍🍳</div><div class="bb-bubble">${say}</div>
+    <div class="bb-cupwrap ${f.lucky ? 'bb-lucky' : 'bb-normal'}">
+      <div class="bb-cup" style="background:linear-gradient(160deg,${f.c[0]},${f.c[1]})">🧋</div>
+      ${f.lucky
+        ? '<span class="bb-spark s1">✨</span><span class="bb-spark s2">✨</span><span class="bb-spark s3">✨</span><span class="bb-star">⭐</span>'
+        : '<span class="bb-pearl p1">⚫</span><span class="bb-pearl p2">⚫</span>'}
+    </div>
+    <div class="bb-status" id="bbStatus">Making your boba...</div>
+    <button class="bfight" id="bbTry" style="width:100%;visibility:hidden">Try</button>`);
+  setTimeout(() => {
+    if (!$('bbStatus')) return;
+    $('bbStatus').textContent = 'Your boba is ready!';
+    $('bbTry').style.visibility = 'visible';
+  }, f.lucky ? 2600 : 2200);
+  $('bbTry').onclick = () => bbPickPet(f);
+}
+
+function bbPickPet(f) {
+  const pets = state.pets;
+  bbShow(`<div class="bb-h">Choose a pet</div>
+    <div class="bb-picks">${pets.map((p, i) => `<button class="bb-pick" data-i="${i}">${PETS[p.idx].e}</button>`).join('')}</div>`);
+  bbOv().onclick = e => {
+    const t = e.target.closest('[data-i]');
+    if (t) bbDrink(f, pets[Number(t.dataset.i)]);
+  };
+}
+
+function bbDrink(f, pet) {
+  bbOv().onclick = null;
+  const phrase = bbPhrase();
+  bbShow(`<div class="bb-petWrap"><div class="bb-petEmoji">${PETS[pet.idx].e}</div><div class="bb-cupFly">🧋</div></div>
+    <div class="bb-bubble" id="bbSay" style="visibility:hidden">${phrase}</div>
+    <button class="bfight" id="bbNext" style="width:100%;visibility:hidden">${f.lucky ? 'Done' : 'Rate it'}</button>`);
+  setTimeout(() => {
+    if (!$('bbSay')) return;
+    $('bbSay').style.visibility = 'visible';
+    $('bbNext').style.visibility = 'visible';
+  }, 1800);
+  $('bbNext').onclick = () => {
+    if (f.lucky) {
+      bbShow(`<div class="bb-bubble">Thanks for trying! Come back tomorrow for another free one.</div>
+        <button class="bfight" id="bbDone" style="width:100%">Done</button>`);
+      $('bbDone').onclick = bbClose;
+    } else {
+      bbRate(f);
+    }
+  };
+}
+
+function bbRate(f) {
+  let stars = 0;
+  bbShow(`<div class="bb-h">How was it?</div>
+    <div class="bb-stars" id="bbStars">${[1, 2, 3, 4, 5].map(i => `<button data-s="${i}">☆</button>`).join('')}</div>
+    <textarea class="bb-comment" id="bbComment" rows="3" maxlength="300" placeholder="Write a comment (only you can see it)"></textarea>
+    <div class="bb-count" id="bbCount">0 words</div>
+    <div class="bb-reward" id="bbReward">Pick stars to see your reward</div>
+    <button class="bfight" id="bbSubmit" style="width:100%" disabled>Submit</button>`);
+
+  const refresh = () => {
+    const words = bbWords($('bbComment').value);
+    $('bbCount').textContent = `${words} word${words === 1 ? '' : 's'}`;
+    $('bbStars').querySelectorAll('button').forEach(b => { b.textContent = Number(b.dataset.s) <= stars ? '★' : '☆'; });
+    const r = bbReward(stars, words);
+    $('bbReward').textContent = stars ? `Reward: ${r} coins` : 'Pick stars to see your reward';
+    $('bbSubmit').disabled = !stars;
+  };
+  $('bbStars').onclick = e => { const b = e.target.closest('[data-s]'); if (b) { stars = Number(b.dataset.s); refresh(); } };
+  $('bbComment').oninput = refresh;
+  $('bbSubmit').onclick = () => {
+    const text = $('bbComment').value.trim();
+    const words = bbWords(text);
+    const reward = bbReward(stars, words);
+    addCoins(reward);
+    const b = bbState();
+    b.log.push({ at: Date.now(), flavour: f.id, stars, words, comment: text, reward });
+    save();
+    toast(`+${reward} coins`);
+    bbClose();
+  };
+}
+
+$('toShopBb').onclick = () => showView('shop');
 </script>
 </body>
 </html>
