@@ -334,6 +334,8 @@ input { -webkit-user-select: text; user-select: text; }
   .mb-center { width:100%; max-width:340px; display:flex; flex-direction:column; align-items:center; text-align:center; }
   .mb-counters { cursor:pointer; }
   .mb-row1 { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .gp-soon { text-align:center; padding:30px 0; color:var(--muted); }
+  .gp-soon b { display:block; font-size:18px; color:var(--text); margin-top:6px; }
 </style>
 </head>
 <body>
@@ -679,7 +681,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-15';
+const APP_VERSION = '2026-11-21-34';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -948,22 +950,6 @@ function render() {
   const needCoins = state.coins < BOSS_MIN && !bossUsedToday();
   $('todayBoss').querySelectorAll('button').forEach(b => { b.disabled = needCoins; b.style.opacity = needCoins ? 0.4 : 1; });
   renderExtras();
-  // Games
-  const games = [
-    { ico: "🌌", name: "Neon Dodge", desc: "Endless. Survive to earn coins", id: "dodge" },
-    { ico: "🫧", name: "Bubble Catcher", desc: "15-second rounds, catch the coins", id: "bubble" },
-    { ico: "🍬", name: "Candy Match", desc: "Match candy. 3 bad swaps and it's over", id: "candy" },
-    { ico: "🔫", name: "Bubble Shooter", desc: "Aim, shoot, and keep bubbles off the ground", id: "shoot" },
-    { ico: "🧱", name: "Tetris", desc: "Stack and clear lines, faster as you go", id: "tetris" },
-    { ico: "🟦", name: "Block Blast", desc: "Place blocks to clear rows and columns", id: "blast" },
-    { ico: "🔤", name: "Daily Word", desc: "One word a day. Solve it for 100 coins", id: "word" }
-  ];
-  $("gameList").innerHTML = games.map(g => `
-    <div class="game">
-      <div class="ico">${g.ico}</div>
-      <div class="info"><b>${g.name}</b><span>${g.desc}</span></div>
-      ${g.id ? `<button class="play" data-game="${g.id}">Play</button>` : `<span class="play off">Soon</span>`}
-    </div>`).join("");
 }
 
 // Habit actions: finished habits can't be unticked
@@ -1048,6 +1034,8 @@ function startGame(id) {
   if (id === 'flappy') { startFlappy(); return; }
   if (id === 'memory') { startMemory(); return; }
   if (id === 'mines') { startMines(); return; }
+  if (id === 'sniper') { startSniper(); return; }
+  if (id === 'alien') { startAlien(); return; }
   $('wordBox').style.display = 'none'; gameCv.style.display = ''; startMusic(id);
   gr = { id, t: 0, last: performance.now(), px: 0, pointer: null, objs: [], spawn: 0, acc: 0, earned: 0, over: false, timer: 15, board: id === 'candy' ? newBoard() : null, sel: null, strikes: 0 };
   $('gameOv').classList.add('on'); $('loseBox').classList.remove('on');
@@ -1056,7 +1044,7 @@ function startGame(id) {
   sizeGame(); gr.px = gameCv.clientWidth / 2; setCoinsUI();
   requestAnimationFrame(tick);
 }
-function gameOver(msg) { gr.over = true; stopMusic(); sfx('lose'); if (gr.id === 'dodge') bestSet('dodgeBest', Math.floor(gr.t)); const once = gr && (gr.id === 'memory' || gr.id === 'mines'); if (once) msg += ' Come back tomorrow for another round.'; $('losePlay').style.display = once ? 'none' : ''; $('loseMsg').textContent = msg; $('loseBox').classList.add('on'); }
+function gameOver(msg) { gr.over = true; stopMusic(); sfx('lose'); if (gr.id === 'dodge') bestSet('dodgeBest', Math.floor(gr.t)); const once = gr && gr.id === 'memory'; if (once) msg += ' Come back tomorrow for another round.'; $('losePlay').style.display = once ? 'none' : ''; $('loseMsg').textContent = msg; $('loseBox').classList.add('on'); }
 function tick(now) {
   if (gr && gr.id === 'candy') { bestSet('candyMax', candyMult(gr)); checkAch(); }
   if (!gr) return;
@@ -1138,6 +1126,8 @@ gameCv.onpointerdown = e => {
   if (gr.id === 'candy') { candyDown(e); return; }
   if (gr.id === 'memory') { memoryTap(e); return; }
   if (gr.id === 'mines') { minesDown(e); return; }
+  if (gr.id === 'sniper') { sniperTap(e); return; }
+  if (gr.id === 'alien') { gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; return; }
   if (gr.id === 'flappy') { flappyTap(); return; }
   if (gr.id === 'shoot') { gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; gr.downX = gr.pointer; gr.aim = Math.max(-1.35, Math.min(1.35, Math.atan((gr.pointer - gameCv.clientWidth / 2) / (gameCv.clientHeight * 0.35)))); return; }
   gr.pointer = e.clientX - gameCv.getBoundingClientRect().left;
@@ -1511,6 +1501,8 @@ document.addEventListener('keydown', e => {
 $('wkb').onclick = e => { const b = e.target.closest('button[data-k]'); if (b) wkey(b.dataset.k); };
 // Music: synthesized live with Web Audio, no files needed. Each game has its own track.
 const TRACKS = {
+  sniper: { bpm: 120, wave: 'triangle', root: 58, vol: 0.09, lead: [0, null, 0, null, 3, null, 5, null, 7, null, 5, null, 3, null, 0, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -8, null, null, null], drums: 'k.h.k.h.s.h.k.h.' },
+  alien: { bpm: 128, wave: 'square', root: 57, vol: 0.07, lead: [0, null, 3, null, 5, null, 7, null, 5, null, 3, null, 0, null, null, null], bass: [-12, null, null, null, -12, null, null, null, -9, null, null, null, -7, null, null, null], drums: 'k.h.k.h.s.h.k.hk' },
   mines: { bpm: 110, wave: 'triangle', root: 55, vol: 0.09, lead: [0, null, 3, null, 7, null, 3, null, 0, null, 5, null, 7, null, 10, null], bass: [-12, null, null, null, -12, null, null, null, -9, null, null, null, -7, null, null, null], drums: 'k...h...k...h...' },
   shoot: { bpm: 132, wave: 'sawtooth', root: 52, vol: 0.07, lead: [0, null, 7, null, 12, null, 7, null, 3, null, 10, null, 7, null, 3, null], bass: [-12, null, -12, null, -12, null, -12, null, -9, null, -9, null, -7, null, -7, null], drums: 'k.s.k.s.k.s.k.ss' },
   brick: { bpm: 138, wave: 'square', root: 62, vol: 0.07, lead: [0, 2, 4, 7, null, 7, 4, 2, 0, 2, 4, 9, 7, null, 4, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -7, null, null, null], drums: 'k.h.s.h.k.h.s.hk' },
@@ -3000,10 +2992,13 @@ COS.rings = [
 ];
 // Shop navigation: the Shop screen links to Pets and Cosmetics.
 let coinsFrom = 'home';
+let ppFrom = 'mystery';
 const VIEW_NAMES = { home: 'Home', shop: 'Shop', boba: 'Baobao Boba', cos: 'Cosmetics', pets: 'Pets', pvp: 'PvP', profile: 'Profile', mystery: 'Mystery Boxes', pp: 'Pet Points' };
 function showView(name) {
   const cur = document.querySelector('.view.on');
   if (name === 'coins' && cur) coinsFrom = cur.id.replace('view-', '');
+  if (name === 'pp' && cur) ppFrom = cur.id.replace('view-', '');
+  if (name === 'games') renderGames();
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
   $('view-' + name).classList.add('on');
   const tab = name === 'cos' || name === 'pets' || name === 'boba' || name === 'secret' || name === 'mystery' || name === 'pp' ? 'shop' : name === 'coins' ? (['boba','cos','pets','mystery','pp','shop','secret'].includes(coinsFrom) ? 'shop' : 'home') : name === 'statspage' || name === 'resetconfirm' || name === 'gallery' ? 'profile' : name === 'pick' || name === 'leaderboard' || name === 'duelpick' || name === 'duelwait' || name === 'duelfight' || name === 'duels' || name === 'tug' || name === 'tugmenu' || name === 'tugboard' ? 'boss' : name;
@@ -3022,7 +3017,7 @@ $('coinsBack').onclick = () => showView(coinsFrom);
 // Tapping any coin counter (not the music button, not the game overlay) opens the exact balance.
 document.addEventListener('click', e => {
   const pill = e.target.closest && e.target.closest('.coins');
-  if (!pill || pill.id === 'homeMusic' || pill.closest('#gameOv')) return;
+  if (!pill || pill.id === 'homeMusic' || pill.closest('#gameOv') || pill.classList.contains('ppPill')) return;
   showView('coins');
 });
 $('view-shop').onclick = e => { const b = e.target.closest('[data-go]'); if (b) showView(b.dataset.go); };
@@ -3580,9 +3575,11 @@ const GAME_CARDS = {
   brick: { ico: '🎾', name: 'Breakout', desc: 'Bounce the ball and break bricks for coins', cat: 'Arcade' },
   flappy: { ico: '🐥', name: 'Flappy Pet', desc: 'Tap to fly through the gaps', cat: 'Arcade' },
   memory: { ico: '🃏', name: 'Memory Match', desc: 'Find the matching pairs. Once a day', cat: 'Puzzle' },
-  mines: { ico: '💣', name: 'Minesweeper', desc: 'Open safe cells and avoid the mines. Once a day', cat: 'Puzzle' }
+  mines: { ico: '💣', name: 'Minesweeper', desc: 'Open safe cells and avoid the mines. Once a day', cat: 'Puzzle' },
+  alien: { ico: '👾', name: 'Alien Invasion', desc: 'Shoot down the alien waves before they land', cat: 'Shooter' },
+  sniper: { ico: '🎯', name: 'Sniper Watch', desc: 'Tap to shoot targets before they vanish. 5 misses and you are out', cat: 'Shooter' }
 };
-const GAME_CATS = ['Arcade', 'Puzzle', 'Shooter'];
+const GAME_CATS = ['Arcade', 'Puzzle', 'Shooter', 'Pet Points'];
 function renderGames() {
   $('gameList').innerHTML = GAME_CATS.map(cat => {
     const cards = Object.entries(GAME_CARDS).filter(([id, g]) => g.cat === cat).map(([id, g]) => `<div class='game'><div class='ico'>${g.ico}</div><div class='info'><b>${g.name}</b><span>${g.desc}</span></div><button class='play' data-game='${id}'>Play</button></div>`).join('');
@@ -3624,7 +3621,7 @@ function blastDrop() {
 }
 gameCv.addEventListener('pointerup', () => { if (gr && gr.id === 'blast') blastDrop(); });
 gameCv.addEventListener('pointercancel', () => { if (gr && gr.id === 'blast') { gr.drag = null; } });
-gameCv.addEventListener('pointerup', () => { if (gr && gr.id === 'mines') minesUp(); });
+gameCv.addEventListener('pointerup', e => { if (gr && gr.id === 'mines') minesUp(e); });
 // Block Blast drop: tries the closest spot, then the spots right next to it, so small misses still place.
 function blastDrop() {
   const d = gr.drag;
@@ -3880,7 +3877,7 @@ function duckDraw(W, H) {
 }
 // Per-game stats: recorded each time a game ends, shown in the Stats tab, and used for achievements.
 const GAME_STAT_IDS = ['dodge', 'bubble', 'candy', 'tetris', 'blast', 'shoot', 'duck', 'zombie'];
-const GAME_STAT_NAMES = { mines: 'Minesweeper', brick: 'Breakout', flappy: 'Flappy Pet', memory: 'Memory Match', dodge: 'Neon Dodge', bubble: 'Bubble Catcher', candy: 'Candy Match', tetris: 'Tetris', blast: 'Block Blast', shoot: 'Bubble Shooter', duck: 'Duck Hunt', zombie: 'Zombie Survivor' };
+const GAME_STAT_NAMES = { sniper: 'Sniper Watch', alien: 'Alien Invasion', mines: 'Minesweeper', brick: 'Breakout', flappy: 'Flappy Pet', memory: 'Memory Match', dodge: 'Neon Dodge', bubble: 'Bubble Catcher', candy: 'Candy Match', tetris: 'Tetris', blast: 'Block Blast', shoot: 'Bubble Shooter', duck: 'Duck Hunt', zombie: 'Zombie Survivor' };
 function recordGameEnd() {
   if (!gr || !gr.id) return;
   state.gstats = state.gstats || {};
@@ -4190,10 +4187,27 @@ document.addEventListener('contextmenu', e => { if (e.target.closest && e.target
 $('gameList').onclick = e => { const b = e.target.closest('button[data-game]'); if (b) startGame(b.dataset.game); };
 // Games tab works like the Shop: pick a category, then pick a game.
 let gameCat = null;
-const CAT_ICO = { Arcade: '🕹️', Puzzle: '🧩', Shooter: '🎯' };
-const CAT_SUB = { Arcade: 'Fast and endless games', Puzzle: 'Brain teasers and block games', Shooter: 'Aim and blast bubbles' };
+function updateGamesCounter() {
+  const pill = document.querySelector('#view-games .coins');
+  if (!pill) return;
+  if (gameCat === 'Pet Points') {
+    pill.classList.add('ppPill');
+    pill.innerHTML = `🐾 <b id="ppGames">${fmtCoins(state.petPoints || 0)}</b>`;
+  } else {
+    pill.classList.remove('ppPill');
+    pill.innerHTML = `🪙 <b id="coins3">0</b>`;
+    setCoinsUI();
+  }
+}
+const CAT_ICO = { Arcade: '🕹️', Puzzle: '🧩', Shooter: '🎯', 'Pet Points': '🐾' };
+const CAT_SUB = { Arcade: 'Fast and endless games', Puzzle: 'Brain teasers and block games', Shooter: 'Aim and blast bubbles', 'Pet Points': 'Coming soon' };
 renderGames = function () {
   const box = $('gameList');
+  updateGamesCounter();
+  if (gameCat === 'Pet Points') {
+    box.innerHTML = `<button class='btn-soft' data-cat='back' style='margin-bottom:12px'>‹ Games</button><div class='gp-soon'><div style='font-size:40px'>🐾</div><b>Coming soon</b></div>`;
+    return;
+  }
   if (!gameCat) {
     box.innerHTML = GAME_CATS.map(cat => `<button class='shopCard' data-cat='${cat}'><div class='sc-ico'>${CAT_ICO[cat]}</div><div><b>${cat}</b><div class='sub'>${CAT_SUB[cat]}</div></div></button>`).join('');
     return;
@@ -5752,7 +5766,7 @@ function mbCounters() {
   $('mbPP').textContent = fmtCoins(pp);
   $('mbCoins').textContent = fmtCoins(c);
 }
-$('ppBack').onclick = () => showView('mystery');
+$('ppBack').onclick = () => showView(ppFrom);
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.ppPill')) showView('pp'); });
 
 function renderMystery() {
@@ -6054,8 +6068,6 @@ function memoryDraw(W, H) {
 
 // MINESWEEPER (once a day)
 function startMines() {
-  if (state.minesDay === todayKey()) { toast('Minesweeper is once a day. Come back tomorrow.'); return; }
-  state.minesDay = todayKey(); save();
   const cells = [];
   for (let i = 0; i < 81; i++) cells.push({ mine: false, adj: 0, open: false, flag: false });
   gr = { id: 'mines', t: 0, last: performance.now(), over: false, earned: 0, pops: [], cells, placed: false, pressIdx: null, pressT: 0, lay: null };
@@ -6074,8 +6086,9 @@ function minesIdx(e) {
   return row * 9 + col;
 }
 function minesDown(e) { const i = minesIdx(e); if (i < 0) return; gr.pressIdx = i; gr.pressT = performance.now(); }
-function minesUp() {
+function minesUp(e) {
   if (gr.pressIdx === null) return;
+  if (minesIdx(e) !== gr.pressIdx) { gr.pressIdx = null; return; }
   const i = gr.pressIdx, held = performance.now() - gr.pressT;
   gr.pressIdx = null;
   if (gr.over) return;
@@ -6092,9 +6105,10 @@ function minesNeighbors(i) {
   return out;
 }
 function placeMines(first) {
-  const near = new Set([first, ...minesNeighbors(first)]);
+  const fr = Math.floor(first / 9), fc = first % 9, near = new Set();
+  for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) { const rr = fr + dr, cc = fc + dc; if (rr >= 0 && rr <= 8 && cc >= 0 && cc <= 8) near.add(rr * 9 + cc); }
   let placed = 0;
-  while (placed < 10) {
+  while (placed < 8) {
     const i = Math.floor(Math.random() * 81);
     if (gr.cells[i].mine || near.has(i)) continue;
     gr.cells[i].mine = true; placed++;
@@ -6141,6 +6155,194 @@ function minesDraw(W, H) {
     else if (!c.open && c.flag) txt = '🚩';
     if (txt) { gx.fillStyle = tc; gx.textAlign = 'center'; gx.textBaseline = 'middle'; gx.font = `bold ${Math.floor(s * 0.55)}px system-ui`; gx.fillText(txt, x + s / 2, y + s / 2); }
   });
+  gameFxDraw(gr.pops);
+}
+
+// ALIEN INVASION
+function startAlien() {
+  gr = { id: 'alien', t: 0, last: performance.now(), over: false, earned: 0, pops: [], pointer: null, ship: 0, tx: 0, shots: [], aliens: [], wave: 1, fireT: 0, drop: 0, kills: 0 };
+  $('gameOv').classList.add('on'); $('loseBox').classList.remove('on'); gameCv.style.display = ''; $('wordBox').style.display = 'none';
+  $('gameTitle').textContent = 'Alien Invasion';
+  $('gameMsg').textContent = "Drag to move your ship. It fires automatically. Each alien pays 2 coins. Don't let them reach the ground.";
+  sizeGame(); startMusic('alien');
+  gr.ship = gameCv.clientWidth / 2; gr.tx = gr.ship;
+  alienWave();
+  requestAnimationFrame(alienTick);
+}
+const AL_GRIDS = [[2, 5], [3, 5], [3, 6], [4, 6], [4, 7], [5, 7]]; // rows x columns: 10, 15, 18, 24, 28, 35 aliens (full field from wave 6)
+function alienWave() {
+  const [rows, cols] = AL_GRIDS[Math.min(gr.wave - 1, AL_GRIDS.length - 1)];
+  gr.cols = cols;
+  gr.aliens = []; gr.drop = 0;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) gr.aliens.push({ c, r, alive: true });
+}
+function alienPos(a, W) {
+  const sx = (W - 60) / Math.max(1, gr.cols - 1);
+  return { x: 30 + a.c * sx + Math.sin(gr.t * 1.1 + a.r * 0.4) * 18, y: 90 + a.r * 42 + gr.drop };
+}
+function alienTick(now) {
+  if (!gr || gr.id !== 'alien') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  if (!gr.over) {
+    gr.t += dt;
+    if (gr.pointer !== null) gr.tx = gr.pointer;
+    gr.ship += (gr.tx - gr.ship) * Math.min(1, dt * 12);
+    gr.ship = Math.max(20, Math.min(W - 20, gr.ship));
+    gr.fireT -= dt;
+    if (gr.fireT <= 0) { gr.shots.push({ x: gr.ship, y: H - 80 }); gr.fireT = 0.3; }
+    for (const s of gr.shots) s.y -= 480 * dt;
+    gr.shots = gr.shots.filter(s => s.y > -10);
+    gr.drop += Math.min(90, 10 + gr.wave * 8) * dt; // falls faster every wave
+    for (const s of gr.shots) {
+      for (const a of gr.aliens) {
+        if (!a.alive) continue;
+        const p = alienPos(a, W);
+        if (Math.abs(s.x - p.x) < 16 && Math.abs(s.y - p.y) < 16) {
+          a.alive = false; s.y = -100; gr.kills++; gr.earned += 2; addCoins(2);
+          gr.pops.push({ x: p.x, y: p.y, txt: '+2', col: '#ffd23f', life: 1 });
+          break;
+        }
+      }
+    }
+    gr.shots = gr.shots.filter(s => s.y > -10);
+    if (gr.aliens.some(a => a.alive && alienPos(a, W).y > H - 90)) gameOver(`They reached the ground. You earned ${gr.earned} 🪙`);
+    if (!gr.over && !gr.aliens.some(a => a.alive)) { gr.wave++; alienWave(); }
+    gameFx(gr.pops, dt);
+  }
+  alienDraw(W, H);
+  if (!gr.over) requestAnimationFrame(alienTick);
+}
+function alienDraw(W, H) {
+  const bg = gx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0b0c2a'); bg.addColorStop(1, '#1d1a4d');
+  gx.fillStyle = bg; gx.fillRect(0, 0, W, H);
+  gx.strokeStyle = '#ff5252'; gx.setLineDash([6, 6]); gx.beginPath(); gx.moveTo(0, H - 90); gx.lineTo(W, H - 90); gx.stroke(); gx.setLineDash([]);
+  gx.fillStyle = '#ffffff'; gx.textAlign = 'center'; gx.textBaseline = 'middle'; gx.font = '26px system-ui';
+  for (const a of gr.aliens) if (a.alive) { const p = alienPos(a, W); gx.fillText('👾', p.x, p.y); }
+  gx.fillStyle = '#ffe066';
+  for (const s of gr.shots) gx.fillRect(s.x - 2, s.y, 4, 12);
+  gx.font = '32px system-ui'; gx.fillText('🚀', gr.ship, H - 50);
+  gx.fillStyle = '#ffffff'; gx.font = '13px system-ui'; gx.textAlign = 'left'; gx.fillText(`Wave ${gr.wave}`, 10, 16);
+  gameFxDraw(gr.pops);
+}
+
+
+
+// SNIPER WATCH
+const SN_COLS = { Red: '#e53935', Blue: '#1e88e5', Yellow: '#fdd835', Green: '#43a047' };
+function startSniper() {
+  gr = { id: 'sniper', t: 0, last: performance.now(), over: false, earned: 0, pops: [], targets: [], misses: 0, kills: 0, spawnT: 0.6, shots: [], aimAng: -Math.PI / 2, flash: 0, active: 'Red', colorT: 5, banner: 0 };
+  $('gameOv').classList.add('on'); $('loseBox').classList.remove('on'); gameCv.style.display = ''; $('wordBox').style.display = 'none';
+  $('gameTitle').textContent = 'Sniper Watch';
+  $('gameMsg').textContent = 'Only tap targets in the colour shown at the top. The colour changes every 5 seconds. Each hit pays 3 coins. 5 misses ends the run.';
+  sizeGame(); startMusic('sniper');
+  requestAnimationFrame(sniperTick);
+}
+function sniperSpawn(W, H) {
+  const names = Object.keys(SN_COLS);
+  const life = Math.max(1.0, 2.2 - gr.kills * 0.04);
+  const col = Math.random() < 0.5 ? gr.active : names[Math.floor(Math.random() * names.length)];
+  const speed = Math.min(140, 60 + gr.kills * 2) * (Math.random() < 0.5 ? -1 : 1);
+  gr.targets.push({ x: 40 + Math.random() * (W - 80), y: 120 + Math.random() * (H - 280), vx: speed, col, life, max: life });
+}
+function sniperTap(e) {
+  const rect = gameCv.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const rx = W / 2, ry = H - 40;
+  let ang = Math.atan2(y - ry, x - rx); ang = Math.max(-Math.PI + 0.17, Math.min(-0.17, ang));
+  gr.aimAng = ang; gr.flash = 0.08;
+  gr.shots.push({ x0: rx + Math.cos(ang) * 46, y0: ry + Math.sin(ang) * 46, x1: x, y1: y, life: 0.12 });
+  const hit = gr.targets.find(t => Math.hypot(t.x - x, t.y - y) <= 30);
+  if (!hit) return;
+  if (hit.col === gr.active) {
+    gr.targets = gr.targets.filter(t => t !== hit);
+    gr.kills++; gr.earned += 3; addCoins(3);
+    gr.pops.push({ x: hit.x, y: hit.y - 36, txt: '+3', col: '#ffd23f', life: 1 });
+  } else {
+    gr.targets = gr.targets.filter(t => t !== hit);
+    gr.misses++;
+    gr.pops.push({ x: hit.x, y: hit.y - 36, txt: `WRONG ${gr.misses}/5`, col: '#ff5252', life: 0.8 });
+    if (gr.misses >= 5) gameOver(`Five misses. You earned ${gr.earned} 🪙`);
+  }
+}
+function sniperTick(now) {
+  if (!gr || gr.id !== 'sniper') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  if (!gr.over) {
+    gr.t += dt;
+    gr.spawnT -= dt;
+    if (gr.spawnT <= 0) {
+      const n = Math.min(1 + Math.floor(gr.kills / 5), 6 - gr.targets.length);
+      for (let i = 0; i < n; i++) sniperSpawn(W, H);
+      gr.spawnT = Math.max(0.7, 1.4 - gr.kills * 0.03);
+    }
+    gr.colorT -= dt;
+    if (gr.colorT <= 0) {
+      const others = Object.keys(SN_COLS).filter(c => c !== gr.active);
+      gr.active = others[Math.floor(Math.random() * others.length)];
+      gr.colorT = 5; gr.banner = 1.5;
+    }
+    gr.banner = Math.max(0, gr.banner - dt);
+    for (const t of gr.targets) {
+      t.x += t.vx * dt;
+      if (t.x < 30) { t.x = 30; t.vx = Math.abs(t.vx); }
+      if (t.x > W - 30) { t.x = W - 30; t.vx = -Math.abs(t.vx); }
+      t.life -= dt;
+    }
+    const gone = gr.targets.filter(t => t.life <= 0);
+    gr.targets = gr.targets.filter(t => t.life > 0);
+    const missed = gone.filter(t => t.col === gr.active).length;
+    if (missed) {
+      gr.misses += missed;
+      gr.pops.push({ x: W / 2, y: 110, txt: `MISS ${gr.misses}/5`, col: '#ff5252', life: 1 });
+      if (gr.misses >= 5) gameOver(`Five misses. You earned ${gr.earned} 🪙`);
+    }
+    for (const s of gr.shots) s.life -= dt;
+    gr.shots = gr.shots.filter(s => s.life > 0);
+    gr.flash = Math.max(0, gr.flash - dt);
+    gameFx(gr.pops, dt);
+  }
+  sniperDraw(W, H);
+  if (!gr.over) requestAnimationFrame(sniperTick);
+}
+function sniperDraw(W, H) {
+  const bg = gx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#16261c'); bg.addColorStop(1, '#2a3d2e');
+  gx.fillStyle = bg; gx.fillRect(0, 0, W, H);
+  for (const t of gr.targets) {
+    const c = SN_COLS[t.col], frac = Math.max(0, t.life / t.max);
+    gx.fillStyle = c; gx.beginPath(); gx.arc(t.x, t.y, 26, 0, 7); gx.fill();
+    gx.fillStyle = '#ffffff'; gx.beginPath(); gx.arc(t.x, t.y, 17, 0, 7); gx.fill();
+    gx.fillStyle = c; gx.beginPath(); gx.arc(t.x, t.y, 8, 0, 7); gx.fill();
+    gx.strokeStyle = '#ffe066'; gx.lineWidth = 4; gx.beginPath(); gx.arc(t.x, t.y, 32, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2); gx.stroke(); gx.lineWidth = 1;
+  }
+  for (const s of gr.shots) {
+    const a = Math.max(0, s.life / 0.12);
+    gx.strokeStyle = `rgba(255,224,102,${a})`; gx.lineWidth = 2;
+    gx.beginPath(); gx.moveTo(s.x0, s.y0); gx.lineTo(s.x1, s.y1); gx.stroke(); gx.lineWidth = 1;
+  }
+  // Colour to tap, shown at the top
+  gx.font = 'bold 22px system-ui'; gx.textAlign = 'center'; gx.textBaseline = 'middle';
+  const label = `TAP: ${gr.active.toUpperCase()}`, tw = gx.measureText(label).width;
+  gx.fillStyle = 'rgba(0,0,0,0.55)'; gx.fillRect(W / 2 - tw / 2 - 14, 12, tw + 28, 40);
+  gx.fillStyle = SN_COLS[gr.active]; gx.fillText(label, W / 2, 33);
+  if (gr.banner > 0) {
+    gx.globalAlpha = Math.min(1, gr.banner);
+    gx.fillStyle = '#ffe066'; gx.font = 'bold 16px system-ui'; gx.fillText('COLOUR CHANGED', W / 2, 68);
+    gx.globalAlpha = 1;
+  }
+  const rx = W / 2, ry = H - 40;
+  gx.fillStyle = '#444444'; gx.beginPath(); gx.arc(rx, ry, 12, 0, 7); gx.fill();
+  gx.save(); gx.translate(rx, ry); gx.rotate(gr.aimAng);
+  gx.fillStyle = '#6b4a2b'; gx.fillRect(-34, -6, 26, 12);
+  gx.fillStyle = '#2b2b2b'; gx.fillRect(-10, -8, 30, 14);
+  gx.fillStyle = '#8a8f98'; gx.fillRect(18, -3, 30, 6);
+  gx.fillStyle = '#111111'; gx.fillRect(-2, -14, 18, 6);
+  gx.fillStyle = '#5ec8ff'; gx.beginPath(); gx.arc(16, -11, 3, 0, 7); gx.fill();
+  if (gr.flash > 0) { gx.fillStyle = '#ffe066'; gx.beginPath(); gx.arc(52, 0, 7, 0, 7); gx.fill(); }
+  gx.restore();
+  gx.fillStyle = '#ffffff'; gx.font = '14px system-ui'; gx.textAlign = 'left'; gx.textBaseline = 'alphabetic';
+  gx.fillText(`Misses left: ${5 - gr.misses}`, 10, 18);
   gameFxDraw(gr.pops);
 }
 </script>
