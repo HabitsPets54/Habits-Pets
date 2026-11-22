@@ -252,7 +252,9 @@ input { -webkit-user-select: text; user-select: text; }
   .bb-pearl.p1 { left:44px; } .bb-pearl.p2 { left:92px; animation-delay:.5s; }
   .bb-status { color:var(--muted); font-size:14px; min-height:20px; }
   .bb-picks { display:grid; grid-template-columns:repeat(auto-fill, 64px); justify-content:center; gap:10px; width:100%; }
-  .bb-pick { width:64px; height:64px; border-radius:14px; border:1px solid var(--line); background:rgba(0,0,0,.18); font-size:30px; cursor:pointer; color:var(--text); }
+  .bb-pick { width:64px; height:64px; padding:4px; border-radius:14px; border:1px solid var(--line); background:rgba(0,0,0,.18); cursor:pointer; color:var(--text); display:flex; align-items:center; justify-content:center; }
+  .bb-face { display:flex; align-items:center; justify-content:center; line-height:1; }
+  .bb-face img { width:100%; height:100%; display:block; }
   .bb-petWrap { position:relative; width:170px; height:170px; margin:0 auto; display:flex; align-items:center; justify-content:center; }
   .bb-petEmoji { font-size:100px; animation: bbBounce .6s infinite alternate; }
   .bb-cupFly { position:absolute; font-size:44px; right:-10px; top:20px; animation: bbFly 1.4s ease-in forwards; }
@@ -268,6 +270,70 @@ input { -webkit-user-select: text; user-select: text; }
   @keyframes bbDrop { 0% { transform:translateY(0); opacity:1; } 100% { transform:translateY(90px); opacity:0; } }
   @keyframes bbBounce { from { transform:translateY(0); } to { transform:translateY(-10px); } }
   @keyframes bbFly { 0% { transform:translate(0,0) rotate(0); } 100% { transform:translate(-110px,30px) rotate(-30deg) scale(.5); opacity:0; } }
+
+  .ss-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ss-grid.four { grid-template-columns:repeat(4, 1fr); gap:8px; }
+  .ss-grid.four .n { font-size:11px; white-space:normal; line-height:1.2; }
+  .ss-grid.four .ss-sel { outline:2px solid var(--accent); outline-offset:3px; }
+  .ss-tile { background:rgba(0,0,0,.18); border:1px solid var(--line); border-radius:14px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--text); font:inherit; cursor:pointer; }
+  .ss-tile.grey { filter:grayscale(1); opacity:.45; }
+  .ss-row { display:flex; align-items:center; gap:12px; background:rgba(0,0,0,.18); border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:8px; }
+  .ss-bar { height:10px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:8px; }
+  .ss-bar > div { height:100%; background:linear-gradient(90deg,#ffd84a,#ff9e5e); }
+  .ss-task { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; text-align:left; }
+  .ss-task:last-child { border-bottom:none; }
+  .ss-task span.t { flex:1; }
+  .ss-box { width:22px; height:22px; border-radius:6px; border:2px solid var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .ss-task.done .ss-box { background:var(--accent); border-color:var(--accent); color:#111; }
+  .ss-prog { color:var(--muted); font-size:12px; white-space:nowrap; }
+  .ss-btns { display:flex; gap:8px; width:100%; }
+  .ss-btns > button { flex:1; }
+  .ss-prev { text-align:left; font-size:14px; line-height:1.7; background:rgba(0,0,0,.2); border-radius:14px; padding:10px 12px; width:100%; box-sizing:border-box; }
+  .mb-top { margin:6px 0 14px; }
+  .mb-title { font-size:22px; margin:12px 0 0; text-align:center; }
+  .mb-counters { display:flex; gap:6px; }
+  .mb-pill { display:flex; align-items:center; gap:4px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:5px 10px; font-size:13px; }
+  .mb-pill b { font-weight:800; }
+  .mb-sec { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:12px; margin-bottom:12px; }
+  .mb-h { font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); text-align:center; margin-bottom:10px; }
+  .mb-boxes { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
+  .mb-box { background:rgba(0,0,0,.18); border:1px solid var(--line); border-radius:14px; padding:8px 4px; display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--text); font:inherit; cursor:pointer; }
+  .mb-art { width:100%; max-width:60px; aspect-ratio:1; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.25); }
+  .mb-art.big { width:150px; height:150px; max-width:none; font-size:72px; margin:0 auto; }
+  .mb-price { font-weight:800; font-size:12px; color:var(--gold); display:flex; align-items:center; gap:2px; }
+  .mb-empty { text-align:center; color:var(--muted); font-size:14px; padding:14px 0; }
+  .mb-activeTop { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:12px; }
+  .mb-activeEmoji { font-size:44px; }
+  .mb-name { font-weight:800; font-size:18px; }
+  .mb-muted { color:var(--muted); font-size:13px; }
+  .mb-stages { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:12px; }
+  .mb-stage { border:1px solid var(--line); border-radius:12px; padding:8px 2px; text-align:center; font-size:11px; color:var(--muted); }
+  .mb-stage b { display:block; font-size:14px; color:var(--text); margin-bottom:2px; }
+  .mb-stage.on { border-color:var(--accent); }
+  .mb-rolled { display:grid; grid-template-columns:repeat(auto-fill, 60px); justify-content:center; gap:8px; }
+  .mb-tile { width:60px; height:60px; border-radius:12px; border:1px solid var(--line); background:rgba(0,0,0,.18); color:var(--text); font:inherit; font-size:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
+  .mb-tile small { font-size:11px; color:var(--muted); }
+  .mb-tile.sel { border-color:var(--accent); }
+  .mb-sheetBox { background:var(--card); border:1px solid var(--line); border-radius:24px; padding:22px; width:100%; max-width:360px; text-align:center; }
+  .mb-sheetTitle { font-size:20px; font-weight:800; margin:14px 0 12px; }
+  .mb-chance { display:grid; grid-template-columns:1fr auto auto; gap:8px 12px; text-align:left; font-size:14px; margin:12px 0; }
+  .mb-chance .d { color:var(--muted); font-size:12px; }
+  .mb-pity { color:var(--accent); font-weight:800; margin-bottom:10px; }
+  .mb-btns { display:flex; gap:8px; }
+  .mb-btns > button { flex:1; }
+  .mb-tapBox { width:180px; height:180px; border-radius:30px; border:none; font-size:90px; cursor:pointer; box-shadow: inset 0 -10px 0 rgba(0,0,0,.25); }
+  .mb-tapHint { color:var(--muted); font-size:15px; margin-bottom:24px; }
+  .mb-tapCount { color:var(--text); font-weight:800; margin-top:24px; font-size:18px; }
+  .mb-reveal { font-size:96px; margin:10px 0; }
+  .mb-tapName { font-size:24px; font-weight:800; }
+  .mb-tapTier { color:var(--accent); font-weight:800; margin:6px 0 10px; }
+  .mb-tapNote { color:var(--muted); font-size:13px; margin-bottom:14px; }
+  @keyframes mbShake { 0% { transform:rotate(0); } 25% { transform:rotate(-8deg); } 75% { transform:rotate(8deg); } 100% { transform:rotate(0); } }
+  .mb-shake { animation: mbShake .35s; }
+  .mb-ov { padding:72px 20px 24px; align-items:center; justify-content:center; flex-direction:column; }
+  .mb-center { width:100%; max-width:340px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+  .mb-counters { cursor:pointer; }
+  .mb-row1 { display:flex; justify-content:space-between; align-items:center; gap:8px; }
 </style>
 </head>
 <body>
@@ -354,13 +420,15 @@ input { -webkit-user-select: text; user-select: text; }
     <button class="shopCard" data-go="pets"><div class="sc-ico">🐾</div><div><b>Pets</b><div class="sub">Adopt and level up all 100 pets</div></div></button>
     <button class="shopCard" data-go="cos"><div class="sc-ico">🎩</div><div><b>Cosmetics</b><div class="sub">Hats for your pets and themes for your card</div></div></button>
       <button class="shopCard" data-go="boba"><div class="sc-ico">🧋</div><div><b>Baobao Boba</b><div class="sub">Pick a boba, pick a pet, and rate it</div></div></button>
+      <button class="shopCard" data-go="secret"><div class="sc-ico">🗝️</div><div><b>Secret Store</b><div class="sub">Hard daily tasks and rare pets</div></div></button>
+      <button class="shopCard" data-go="mystery"><div class="sc-ico">🎁</div><div><b>Mystery Boxes</b><div class="sub">Open boxes for random pets</div></div></button>
   </section>
   <section class="view" id="view-coins">
-    <div class="top"><button class="btn-soft" id="coinsBack" style="min-width:96px">‹ Home</button><h1 style="flex:1;text-align:center">Your coins</h1><div style="min-width:96px"></div></div>
-    <section class="card" style="text-align:center">
-      <div style="font-size:48px;line-height:1">🪙</div>
+    <div class="top"><button class="btn-soft" id="coinsBack" style="min-width:96px;white-space:nowrap">‹ Back</button><h1 style="flex:1;text-align:center;white-space:nowrap">Your coins</h1><div style="min-width:96px"></div></div>
+    <section class="card" style="text-align:center;width:100%;box-sizing:border-box;padding:32px 12px">
+      <div style="font-size:56px;line-height:1">🪙</div>
       <div style="color:var(--muted);font-size:14px;margin-top:10px">Exact balance</div>
-      <div id="coinsExact" style="font-size:40px;font-weight:800;color:var(--coin);margin-top:6px;word-break:break-all">0</div>
+      <div id="coinsExact" style="font-size:44px;font-weight:800;color:var(--coin);margin-top:6px;white-space:nowrap">0</div>
     </section>
     <p class="foot">Coins come from habits, games and boss fights. Spend them in the Shop.</p>
   </section>
@@ -445,11 +513,36 @@ input { -webkit-user-select: text; user-select: text; }
     <section class="card"><h2>Pet rings</h2><div class="grid" id="cosRings"></div></section>
     <p class="foot">Hats sit on your pet. Themes color your pet card. Rings color the ring around your pet (from level 5). You can wear one hat, one theme, and one ring color at a time. Tap a worn item again to take it off.</p>
   </section>
+  <section class="view" id="view-mystery">
+    <div class="mb-top">
+      <div class="mb-row1">
+        <button class="btn-soft" id="toShopMb">‹ Shop</button>
+        <div class="mb-counters" id="mbCounters">
+          <div class="mb-pill ppPill"><span>🐾</span><b id="mbPP">0</b></div>
+          <div class="mb-pill coins"><span>🪙</span><b id="mbCoins">0</b></div>
+        </div>
+      </div>
+      <h1 class="mb-title">Mystery Boxes</h1>
+    </div>
+    <div class="mb-sec"><div class="mb-h">Your pet</div><div id="mbActive"></div></div>
+    <div class="mb-sec"><div class="mb-h">Boxes</div><div class="mb-boxes" id="mbBoxes"></div></div>
+    <div class="mb-sec"><div class="mb-h">Rolled pets</div><div class="mb-rolled" id="mbRolled"></div></div>
+  </section>
+  <div class="ov mb-ov" id="mbSheet"></div>
+  <div class="ov mb-ov" id="mbTap"></div>
+  <section class="view" id="view-pp">
+    <div class="top"><button class="btn-soft" id="ppBack" style="min-width:96px">‹ Back</button><h1 style="flex:1;text-align:center;white-space:nowrap">Pet Points</h1><div style="min-width:96px"></div></div>
+    <section class="card" style="text-align:center;width:100%;box-sizing:border-box;padding:32px 12px">
+      <div style="font-size:56px;line-height:1">🐾</div>
+      <div style="color:var(--muted);font-size:14px;margin-top:10px">Exact balance</div>
+      <div id="ppExact" style="font-size:44px;font-weight:800;color:var(--paw);margin-top:6px;white-space:nowrap">0</div>
+    </section>
+  </section>
   <section class="view" id="view-boba">
     <div class="bb-top">
       <div class="bb-row1">
         <button class="btn-soft" id="toShopBb">‹ Shop</button>
-        <div class="bb-pill"><span>🪙</span><b id="bbCoins">0</b></div>
+        <div class="bb-pill coins"><span>🪙</span><b id="bbCoins">0</b></div>
       </div>
       <h1 class="bb-title">Baobao Boba</h1>
     </div>
@@ -457,6 +550,19 @@ input { -webkit-user-select: text; user-select: text; }
     <div class="bb-sec"><div class="bb-h">Menu</div><div class="bb-menu" id="bbMenu"></div></div>
   </section>
   <div class="bb-ov" id="bbOv"></div>
+  <section class="view" id="view-secret">
+    <div class="bb-top">
+      <div class="bb-row1">
+        <button class="btn-soft" id="toShopSs">‹ Shop</button>
+        <div class="bb-pill coins"><span>🪙</span><b id="ssCoins">0</b></div>
+      </div>
+      <h1 class="bb-title">Secret Store</h1>
+    </div>
+    <div class="bb-sec" id="ssOwnedSec"><div class="bb-h">Your secret pets</div><div id="ssOwned"></div></div>
+    <div class="bb-sec"><div class="bb-h">For sale</div><div class="ss-grid four" id="ssShop"></div></div>
+    <div class="bb-sec"><div class="bb-h">Daily tasks</div><div id="ssTasks"></div><button class="bfight" id="ssClaim" style="width:100%;margin-top:12px" disabled>Claim</button></div>
+  </section>
+  <div class="bb-ov" id="ssOv"></div>
   <section class="view" id="view-profile">
     <div class="top"><h1>Profile</h1></div>
     <section class="card" style="text-align:center">
@@ -573,7 +679,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-1';
+const APP_VERSION = '2026-11-21-7';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -641,6 +747,7 @@ function comboName(i) {
 }
 
 let state = load();
+if (state.petPoints == null) state.petPoints = 0;
 const $ = id => document.getElementById(id);
 const todayKey = () => {
   const d = new Date();
@@ -822,6 +929,7 @@ function render() {
   $("ownedCount").textContent = `${state.pets.length}/${PETS.length} owned`;
   $("allCount").textContent = PETS.length;
   $("petGrid").innerHTML = PETS.map((p, i) => {
+    if (p.secret && !ownedIdx.includes(i)) return "";
     const owned = ownedIdx.includes(i);
     const isActive = owned && state.pets[state.active] && state.pets[state.active].idx === i;
     const sub = owned ? `Lv ${state.pets.find(x => x.idx === i).level}` : `🪙 ${p.price}`;
@@ -924,7 +1032,7 @@ const gameCv = $('gc'), gx = gameCv.getContext('2d');
 const BUB = { 1: '#7ef9ff', 2: '#7cff6b', 5: '#ffe066', 10: '#ff9f43', 50: '#ffd700', '-5': '#ff5252', '-10': '#b71c1c', bomb: '#ff6b00' };
 let gr = null;
 // Every coin counter in the app (home, boss, shop, cosmetics, game overlay) updates together.
-const COIN_IDS = ['coins1', 'coins2', 'coins3', 'coins4', 'coins6', 'cosCoins', 'gameCoins', 'bbCoins'];
+const COIN_IDS = ['coins1', 'coins2', 'coins3', 'coins4', 'coins6', 'cosCoins', 'gameCoins', 'bbCoins', 'ssCoins'];
 function setCoinsUI() { COIN_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = fmtCoins(state.coins); }); const ex = document.getElementById('coinsExact'); if (ex) ex.textContent = state.coins.toLocaleString(); }
 function addCoins(n) { state.coins = Math.max(0, state.coins + n); if (n > 0) { stat('coinsEarned', n); sfx('coin'); } save(); setCoinsUI(); checkAch(); }
 function sizeGame() { const r = devicePixelRatio || 1; gameCv.width = gameCv.clientWidth * r; gameCv.height = gameCv.clientHeight * r; gx.setTransform(r, 0, 0, r, 0, 0); }
@@ -1544,7 +1652,7 @@ function bossDaily() {
   const n = Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(2026, 0, 1)) / 864e5);
   return ((n % 200) + 200) % 200;
 }
-const petStatsOf = p => ({ hp: 60 + p.level * 12, atk: 8 + p.level * 3 + (p.idx % 5) });
+const petStatsOf = p => { const b = { hp: 60 + p.level * 12, atk: 8 + p.level * 3 + (p.idx % 5) }; const m = PETS[p.idx] && PETS[p.idx].secret; return m ? { hp: Math.round(b.hp * m.hp), atk: Math.round(b.atk * m.atk) } : b; };
 function bossCard(b) {
   return `<div class='bcard'><div class='bdot' style='background:hsl(${b.hue},80%,55%);color:hsl(${b.hue},80%,55%)'></div><div><b>${b.name}</b><div class='sub'>HP ${b.hp} · Hit ${b.dmg} · ${b.moves.length} moves</div></div></div>`;
 }
@@ -1923,6 +2031,7 @@ function applySpecial(sp) {
     case 'lifesteal': f.lsT = sp.v; break;
     case 'rage': f.rageT = sp.v; break;
     case 'cleanse': f.shieldT = 0; f.regT = 0; f.php = Math.min(f.phpMax, f.php + sp.v); break;
+    case 'combo': f.bhp -= Math.ceil(f.atk * (sp.dmg || 0)); if (sp.heal) f.php = Math.min(f.phpMax, f.php + sp.heal); if (sp.stun) { f.stun = Math.max(f.stun, sp.stun); f.bState = 'idle'; } if (sp.inv) f.invT = sp.inv; break;
   }
 }
 function chooseBoss(i) {
@@ -2878,19 +2987,26 @@ COS.rings = [
   { id: 'silver', n: 'Silver', price: 100 }, { id: 'gold', n: 'Gold', price: 120 }
 ];
 // Shop navigation: the Shop screen links to Pets and Cosmetics.
+let coinsFrom = 'home';
+const VIEW_NAMES = { home: 'Home', shop: 'Shop', boba: 'Baobao Boba', cos: 'Cosmetics', pets: 'Pets', pvp: 'PvP', profile: 'Profile', mystery: 'Mystery Boxes', pp: 'Pet Points' };
 function showView(name) {
+  const cur = document.querySelector('.view.on');
+  if (name === 'coins' && cur) coinsFrom = cur.id.replace('view-', '');
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
   $('view-' + name).classList.add('on');
-  const tab = name === 'cos' || name === 'pets' || name === 'boba' ? 'shop' : name === 'coins' ? 'home' : name === 'statspage' || name === 'resetconfirm' || name === 'gallery' ? 'profile' : name === 'pick' || name === 'leaderboard' || name === 'duelpick' || name === 'duelwait' || name === 'duelfight' || name === 'duels' || name === 'tug' || name === 'tugmenu' || name === 'tugboard' ? 'boss' : name;
+  const tab = name === 'cos' || name === 'pets' || name === 'boba' || name === 'secret' || name === 'mystery' || name === 'pp' ? 'shop' : name === 'coins' ? (['boba','cos','pets','mystery','pp','shop','secret'].includes(coinsFrom) ? 'shop' : 'home') : name === 'statspage' || name === 'resetconfirm' || name === 'gallery' ? 'profile' : name === 'pick' || name === 'leaderboard' || name === 'duelpick' || name === 'duelwait' || name === 'duelfight' || name === 'duels' || name === 'tug' || name === 'tugmenu' || name === 'tugboard' ? 'boss' : name;
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   if (name === 'cos') renderCos();
   if (name === 'boba') renderBoba();
+  if (name === 'mystery') renderMystery();
+  if (name === 'pp') $('ppExact').textContent = (state.petPoints || 0).toLocaleString();
+  if (name === 'secret') renderSecret();
   setCoinsUI();
   window.scrollTo(0, 0);
 }
 $('toShop').onclick = () => showView('shop');
 $('toPets').onclick = () => showView('shop');
-$('coinsBack').onclick = () => showView('home');
+$('coinsBack').onclick = () => showView(coinsFrom);
 // Tapping any coin counter (not the music button, not the game overlay) opens the exact balance.
 document.addEventListener('click', e => {
   const pill = e.target.closest && e.target.closest('.coins');
@@ -5352,10 +5468,13 @@ function bbMaking(f) {
   $('bbTry').onclick = () => bbPickPet(f);
 }
 
+function bbFace(idx, size) {
+  return `<div class="bb-face" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.8)}px">${petHTML(idx, 5)}</div>`;
+}
 function bbPickPet(f) {
   const pets = state.pets;
   bbShow(`<div class="bb-h">Choose a pet</div>
-    <div class="bb-picks">${pets.map((p, i) => `<button class="bb-pick" data-i="${i}">${PETS[p.idx].e}</button>`).join('')}</div>`);
+    <div class="bb-picks">${pets.map((p, i) => `<button class="bb-pick" data-i="${i}">${bbFace(p.idx, 56)}</button>`).join('')}</div>`);
   bbOv().onclick = e => {
     const t = e.target.closest('[data-i]');
     if (t) bbDrink(f, pets[Number(t.dataset.i)]);
@@ -5364,8 +5483,9 @@ function bbPickPet(f) {
 
 function bbDrink(f, pet) {
   bbOv().onclick = null;
+  secTrack('bobaDrinks', 1);
   const phrase = bbPhrase();
-  bbShow(`<div class="bb-petWrap"><div class="bb-petEmoji">${PETS[pet.idx].e}</div><div class="bb-cupFly">🧋</div></div>
+  bbShow(`<div class="bb-petWrap"><div class="bb-petEmoji">${bbFace(pet.idx, 150)}</div><div class="bb-cupFly">🧋</div></div>
     <div class="bb-bubble" id="bbSay" style="visibility:hidden">${phrase}</div>
     <button class="bfight" id="bbNext" style="width:100%;visibility:hidden">${f.lucky ? 'Done' : 'Rate it'}</button>`);
   setTimeout(() => {
@@ -5417,6 +5537,308 @@ function bbRate(f) {
 }
 
 $('toShopBb').onclick = () => showView('shop');
+
+// SECRET STORE
+const SEC_ART = {"Solar Drake": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='#ffb830' opacity='.22'/><circle cx='50' cy='50' r='34' fill='#ffcf4d' opacity='.35'/><path d='M22 60 Q34 34 58 40 L76 30 L72 48 Q62 62 44 66 L34 80 Z' fill='#e0561c'/><path d='M46 46 L62 40 L60 52 Z' fill='#ffe07a'/><circle cx='56' cy='48' r='3' fill='#2a0d00'/><path d='M38 62 L30 74 M52 64 L48 78' stroke='#8a2a00' stroke-width='4' stroke-linecap='round'/></svg>", "Void Wisp": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='#3b1d6e' opacity='.35'/><path d='M50 16 C74 16 80 40 77 60 C75 78 64 84 60 94 C56 82 46 86 42 94 C36 82 24 76 23 56 C21 36 28 16 50 16 Z' fill='#5b2bb0'/><ellipse cx='40' cy='46' rx='5.5' ry='7.5' fill='#e4b8ff'/><ellipse cx='60' cy='46' rx='5.5' ry='7.5' fill='#e4b8ff'/><circle cx='41' cy='47' r='2.6' fill='#14062e'/><circle cx='61' cy='47' r='2.6' fill='#14062e'/></svg>", "Crystal Titan": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='50,8 84,28 84,68 50,90 16,68 16,28' fill='#7fd6ff'/><polygon points='50,8 84,28 50,50 16,28' fill='#d4f4ff'/><polygon points='50,50 84,28 84,68 50,90' fill='#4aa8e0'/><polygon points='50,50 16,28 16,68 50,90' fill='#2f7fbf'/><circle cx='39' cy='48' r='4' fill='#effcff'/><circle cx='61' cy='48' r='4' fill='#effcff'/></svg>", "Thunder Fox": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M22 26 L34 42 L66 42 L78 26 L80 58 Q82 80 50 84 Q18 80 20 58 Z' fill='#ffd23f'/><path d='M22 26 L34 42 L30 48 Z M78 26 L66 42 L70 48 Z' fill='#ff9f1c'/><circle cx='40' cy='58' r='3.5' fill='#3a2a00'/><circle cx='60' cy='58' r='3.5' fill='#3a2a00'/><path d='M46 68 L54 68 L50 73 Z' fill='#3a2a00'/><polygon points='54,6 40,30 50,30 44,48 64,22 53,22 60,6' fill='#fff27a'/></svg>"};
+const SEC_PETS = [
+  { n: 'Solar Drake', stages: ['🥚','🦎','🔥','🐉','☀️🐉'], m: { hp: 2.2, atk: 1.8 }, sp: { n: 'Sun Crash', dmg: 6, heal: 25 }, desc: 'Huge hit that also heals 25 health.' },
+  { n: 'Void Wisp', stages: ['🫧','👻','🌑','🌌','🕳️👻'], m: { hp: 2.4, atk: 1.5 }, sp: { n: 'Void Pull', dmg: 4, heal: 40, stun: 1.5 }, desc: 'Hit, heal 40 and stun the boss.' },
+  { n: 'Crystal Titan', stages: ['🪨','💎','🗿','💠','🔷🗿'], m: { hp: 3.0, atk: 1.4 }, sp: { n: 'Shard Armor', dmg: 2, heal: 60, inv: 3 }, desc: 'Heal 60 and go invulnerable for 3 seconds.' },
+  { n: 'Thunder Fox', stages: ['🥚','🦊','⚡','🦊⚡','🌩️🦊'], m: { hp: 1.9, atk: 2.2 }, sp: { n: 'Storm Chain', dmg: 7, stun: 3 }, desc: 'Massive hit that stuns the boss for 3 seconds.' }
+];
+SEC_PETS.forEach(d => {
+  PETS.push({ e: d.stages[0], n: d.n, stages: d.stages, price: 0, secret: d.m, secretDesc: d.desc, art: [null, null, null, null, SEC_ART[d.n]] });
+  SPECIALS[d.n] = { n: d.sp.n, t: 'combo', v: 0, dmg: d.sp.dmg || 0, heal: d.sp.heal || 0, stun: d.sp.stun || 0, inv: d.sp.inv || 0 };
+});
+
+function secSeq(a, b, s = 1) { const r = []; for (let x = a; x <= b; x += s) r.push(x); return r; }
+const SEC_TYPES = [
+  { k: 'streak', t: g => `Complete all 3 habits for ${g} days in a row`, goals: secSeq(2, 16) },
+  { k: 'bossKills', t: g => `Defeat ${g} bosses in one day`, goals: secSeq(1, 10) },
+  { k: 'duelWins', t: g => `Win ${g} duels in one day`, goals: secSeq(1, 15) },
+  { k: 'gamesPlayed', t: g => `Play ${g} mini-games in one day`, goals: secSeq(3, 17) },
+  { k: 'coinsEarned', t: g => `Earn ${g} coins in one day`, goals: secSeq(200, 1600, 100).concat(secSeq(1700, 2600, 100)) },
+  { k: 'bobaDrinks', t: g => `Drink ${g} boba in one day`, goals: secSeq(1, 10) },
+  { k: 'gold', t: g => `Catch ${g} gold bubbles in one day`, goals: secSeq(10, 100, 10) }
+];
+const SEC_TASKS = SEC_TYPES.flatMap(ty => ty.goals.map(g => ({ k: ty.k, g, text: ty.t(g) })));
+const SEC_STAT_MAP = { habitsDone: 'habitsDone', bossKills: 'bossKills', coinsEarned: 'coinsEarned', gold: 'gold' };
+
+function secRng(str) {
+  let h = 2166136261;
+  for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  let a = h >>> 0;
+  return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function secPick(day) {
+  const rnd = secRng(day);
+  const idx = [...Array(SEC_TASKS.length).keys()];
+  for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+  return idx.slice(0, 5);
+}
+function secDay() {
+  const t = todayKey();
+  const s = state.sec = state.sec || { bought: {}, xp: {}, completed: {} };
+  if (s.day !== t) { s.day = t; s.prog = {}; s.picks = secPick(t); s.claimed = false; save(); }
+  return s;
+}
+function secTrack(k, n = 1) {
+  if (!SEC_TYPES.some(x => x.k === k) && k !== 'habitsDone') return;
+  const s = secDay();
+  s.prog[k] = (s.prog[k] || 0) + n;
+  if (k === 'habitsDone' && s.prog.habitsDone >= 3) { s.perfect = s.perfect || {}; s.perfect[todayKey()] = true; }
+  save();
+  if ($('ssTasks')) renderSecret();
+}
+function secStreak() {
+  const s = secDay(), p = s.perfect || {}, d = new Date();
+  const key = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  if (!p[key(d)]) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (p[key(d)]) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function secProg(k) { return k === 'streak' ? secStreak() : (secDay().prog[k] || 0); }
+function secDone(i) { const t = SEC_TASKS[i]; return secProg(t.k) >= t.g; }
+function secOwnedList() { const s = secDay(); return SEC_PETS.map(d => d.n).filter(n => s.bought[n] && !s.completed[n]); }
+function secIdx(n) { return PETS.findIndex(p => p.n === n); }
+
+function renderSecret() {
+  const s = secDay();
+  setCoinsUI();
+  const owned = secOwnedList();
+  const shown = s.sel && !s.completed[s.sel] ? s.sel : owned[0];
+  $('ssOwnedSec').style.display = shown ? 'block' : 'none';
+  $('ssOwned').innerHTML = shown ? (() => {
+    const n = shown, b = !!s.bought[n], xp = s.xp[n] || 0;
+    return `<div class="ss-row">${bbFace(secIdx(n), 48)}<div style="flex:1;min-width:0"><div style="font-weight:800">${n}</div>${b ? `<div class="ss-bar"><div style="width:${xp / 10}%"></div></div>` : `<button class="bfight" id="ssBuyTop" style="margin-top:8px;padding:8px 14px;font-size:14px">Buy · Free</button>`}</div></div>`;
+  })() : '';
+
+  $('ssShop').innerHTML = SEC_PETS.map(d => {
+    const b = !!s.bought[d.n];
+    return `<button class="tile ${b ? '' : 'locked'} ${d.n === shown ? 'ss-sel' : ''}" data-sec="${d.n}"><div class="e"><div style="width:56px;height:56px;margin:0 auto">${petHTML(secIdx(d.n), 5)}</div></div><div class="n">${d.n}</div><div class="s">${b ? 'Owned' : 'Free'}</div></button>`;
+  }).join('');
+
+  $('ssTasks').innerHTML = s.picks.map(i => {
+    const t = SEC_TASKS[i], v = secProg(t.k), done = v >= t.g;
+    return `<div class="ss-task ${done ? 'done' : ''}"><span class="ss-box">${done ? '✓' : ''}</span><span class="t">${t.text}</span><span class="ss-prog">${Math.min(v, t.g)}/${t.g}</span></div>`;
+  }).join('');
+
+  const allDone = s.picks.every(secDone);
+  const btn = $('ssClaim');
+  if (s.claimed) { btn.textContent = 'Claimed today'; btn.disabled = true; }
+  else if (!allDone) { btn.textContent = 'Finish all 5 tasks to claim'; btn.disabled = true; }
+  else if (!owned.length) { btn.textContent = 'Buy a secret pet to claim'; btn.disabled = true; }
+  else { btn.textContent = 'Claim'; btn.disabled = false; }
+}
+
+function secShow(html) { const ov = $('ssOv'); ov.innerHTML = `<div class="bb-center">${html}</div>`; ov.classList.add('on'); }
+
+$('ssShop').onclick = e => {
+  const b = e.target.closest('[data-sec]');
+  if (!b) return;
+  const s = secDay();
+  s.sel = b.dataset.sec;
+  save();
+  renderSecret();
+};
+$('ssOwned').onclick = e => {
+  if (!e.target.closest('#ssBuyTop')) return;
+  const s = secDay(), n = s.sel;
+  s.bought[n] = true; save();
+  toast(`${n} is unlocked`);
+  renderSecret();
+};
+
+$('ssClaim').onclick = () => {
+  const s = secDay(), owned = secOwnedList();
+  if (s.claimed || !owned.length || !s.picks.every(secDone)) return;
+  secShow(`<div class="bb-h">Choose a pet</div>
+    <div class="ss-grid">${owned.map(n => `<button class="ss-tile" data-cp="${n}">${bbFace(secIdx(n), 48)}<div style="font-size:12px">${n}</div></button>`).join('')}</div>
+    <button class="btn-soft" id="ssBack2" style="width:100%">Back</button>`);
+  $('ssBack2').onclick = () => { $('ssOv').classList.remove('on'); };
+  $('ssOv').onclick = e => {
+    const b = e.target.closest('[data-cp]');
+    if (!b) return;
+    const n = b.dataset.cp;
+    s.xp[n] = Math.min(1000, (s.xp[n] || 0) + 5);
+    s.claimed = true;
+    if (s.xp[n] >= 1000) {
+      s.completed[n] = true;
+      state.pets.push({ idx: secIdx(n), level: 5 });
+      toast(`${n} has been moved to your pets!`);
+    } else toast(`+5 XP for ${n}`);
+    save();
+    $('ssOv').onclick = null;
+    $('ssOv').classList.remove('on');
+    renderSecret();
+  };
+};
+$('toShopSs').onclick = () => showView('shop');
+
+// Track events the app already records
+const _secStat = stat;
+stat = function (k, n = 1) { _secStat(k, n); if (SEC_STAT_MAP[k]) secTrack(SEC_STAT_MAP[k], n); };
+const _secStartGame = startGame;
+startGame = function (id) { secTrack('gamesPlayed', 1); return _secStartGame(id); };
+const _secEndFight = endFight;
+endFight = function (res) { const was = fight && fight.result; _secEndFight(res); if (!was && res === 'won') secTrack('duelWins', 1); };
+
+const MB_TIER_NAMES = [["Chick", "Puppy", "Kitten", "Bunny", "Sprout", "Acorn Tree", "Fish", "Turtle", "Crab", "Ladybug", "Butterfly", "Snail", "Penguin", "Owl", "Fox", "Bear", "Cow", "Horse", "Pig", "Monkey", "Hamster", "Frog", "Duck", "Hedgehog", "Raccoon", "Otter", "Koala", "Mole", "Starfish", "Seahorse", "Firefly", "Stag", "Badger", "Beaver", "Porcupine", "Gecko", "Toucan", "Pelican", "Walrus", "Ostrich"], ["Tiger", "Wolf", "Panda", "Eagle", "Swan", "Parrot", "Bat", "Dolphin", "Shark", "Elephant", "Giraffe", "Kangaroo", "Lion", "Flamingo", "Robot", "Dino", "Armadillo", "Chameleon", "Salamander", "Scorpion", "Tarantula", "Jellyfish", "Lobster", "Nautilus", "Narwhal", "Manatee", "Seal", "Peacock", "Ice Hare", "Sea Urchin"], ["Unicorn", "Octopus", "Werewolf", "Mermaid", "Centaur", "Minotaur", "Gargoyle", "Wyvern", "Jackalope", "Lynx", "Ghost Cat", "Thunder Ox", "Snow Owl", "Yeti", "Moon Cat"], ["Griffin", "Phoenix", "Kraken", "Thunderbird", "Cerberus", "Basilisk", "Pegasus", "Chimera", "Hydra", "Sphinx"], ["Alien", "Golem", "Leviathan", "Mammoth", "Dragon"]];
+// MYSTERY BOXES
+const MB_PRICES = [50, 100, 125, 150, 175, 200, 225, 250];
+const MB_TIERS = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
+const MB_ODDS = { 50: [60,25,10,4,1], 100: [56,26,12,5,1], 125: [52,27,13,6,2], 150: [48,27,15,7,3], 175: [44,28,16,8,4], 200: [40,28,17,10,5], 225: [36,28,18,12,6], 250: [32,28,19,14,7] };
+const MB_COLORS = { 50: ['#8a8a8a','#5a5a5a'], 100: ['#7fd19a','#3f9a62'], 125: ['#6fd3d0','#2f8f8c'], 150: ['#7fb2ff','#3a6fd1'], 175: ['#b08cff','#6a3fc9'], 200: ['#ff8fc7','#c93f8c'], 225: ['#ffad6e','#d46a2a'], 250: ['#ffe07a','#e0a52a'] };
+const MB_PITY = 25;
+// Pet Points for upgrade stages 1 to 5. You gave 20, 50, 75, 80. Stage 5 is 80 until you say otherwise.
+const MB_STAGE_COST = [20, 50, 75, 80, 80];
+
+// Rolled pets are separate entries, so repeat pulls each get their own row.
+function mbState() { state.mb2 = state.mb2 || { pity: {}, rolled: [], sel: null, stage: {}, nextId: 1 }; return state.mb2; }
+function mbBoxArt(price) { const c = MB_COLORS[price]; return `background:linear-gradient(160deg,${c[0]},${c[1]})`; }
+function mbIdx(name) { return PETS.findIndex(p => p.n === name); }
+function mbOwned(name) { const idx = mbIdx(name); return state.pets.some(p => p.idx === idx); }
+
+function mbRollTier(odds) {
+  const r = Math.random() * 100; let acc = 0;
+  for (let i = 0; i < 5; i++) { acc += odds[i]; if (r < acc) return i; }
+  return 4;
+}
+function mbRoll(price, guaranteed) {
+  const odds = MB_ODDS[price];
+  let tier;
+  if (guaranteed) { // top two tiers only, split by this box's Epic vs Legendary odds
+    tier = Math.random() * (odds[3] + odds[4]) < odds[3] ? 3 : 4;
+  } else tier = mbRollTier(odds);
+  const list = MB_TIER_NAMES[tier];
+  return { tier: MB_TIERS[tier], name: list[Math.floor(Math.random() * list.length)], guaranteed };
+}
+
+function mbCounters() {
+  const pp = state.petPoints || 0, c = state.coins || 0;
+  $('mbPP').textContent = fmtCoins(pp);
+  $('mbCoins').textContent = fmtCoins(c);
+}
+$('ppBack').onclick = () => showView('mystery');
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.ppPill')) showView('pp'); });
+
+function renderMystery() {
+  const m = mbState();
+  mbCounters();
+  setCoinsUI();
+  $('mbBoxes').innerHTML = MB_PRICES.map(p => `<button class="mb-box" data-price="${p}"><div class="mb-art" style="${mbBoxArt(p)}">🎁</div><div class="mb-price">🪙 ${p}</div></button>`).join('');
+
+  const sel = m.rolled.find(r => r.id === m.sel);
+  if (!sel) {
+    $('mbActive').innerHTML = `<div class="mb-empty">No pet yet. Buy a box to get your first pet.</div>`;
+  } else {
+    const idx = mbIdx(sel.name), st = m.stage[sel.id] || 0;
+    $('mbActive').innerHTML = `
+      <div class="mb-activeTop"><div class="mb-activeEmoji">${PETS[idx].e}</div><div><div class="mb-name">${sel.name}</div><div class="mb-muted">Locked, stage ${st} of 5</div></div></div>
+      <div class="mb-stages">${[0,1,2,3,4].map(i => `<div class="mb-stage ${i < st ? 'on' : ''}"><b>${i + 1}</b>${MB_STAGE_COST[i]} PP</div>`).join('')}</div>
+      <button class="bfight" id="mbUnlockBtn" style="width:100%">Unlock, ${MB_STAGE_COST[st]} PP</button>`;
+  }
+
+  $('mbRolled').innerHTML = m.rolled.length
+    ? m.rolled.map(r => `<button class="mb-tile ${r.id === m.sel ? 'sel' : ''}" data-id="${r.id}">${PETS[mbIdx(r.name)].e}<small>🔒</small></button>`).join('')
+    : `<div class="mb-empty" style="grid-column:1/-1">Buy your first box to see your pets here.</div>`;
+}
+
+function mbOpenSheet(price) {
+  const m = mbState(), odds = MB_ODDS[price], base = MB_ODDS[50], count = m.pity[price] || 0;
+  const sheet = $('mbSheet');
+  sheet.innerHTML = `<div class="mb-sheetBox">
+      <div class="mb-art big" style="${mbBoxArt(price)}">🎁</div>
+      <div class="mb-sheetTitle">🪙 ${price} box</div>
+      <div id="mbChancesWrap" style="display:none">
+        <div class="mb-pity">Pity ${count}/${MB_PITY}</div>
+        <div class="mb-chance">${MB_TIERS.map((t, i) => { const d = odds[i] - base[i]; return `<span>${t}</span><b>${odds[i]}%</b><span class="d">${d ? (d > 0 ? '+' : '') + d + '%' : 'base'}</span>`; }).join('')}</div>
+      </div>
+      <div class="mb-btns">
+        <button class="bfight" id="mbBuyBtn">Buy</button>
+        <button class="btn-soft" id="mbChancesBtn">Chances</button>
+        <button class="btn-soft" id="mbCancelBtn">Cancel</button>
+      </div></div>`;
+  sheet.classList.add('on');
+  $('mbChancesBtn').onclick = () => { const w = $('mbChancesWrap'); w.style.display = w.style.display === 'none' ? 'block' : 'none'; };
+  $('mbCancelBtn').onclick = () => sheet.classList.remove('on');
+  $('mbBuyBtn').onclick = () => { sheet.classList.remove('on'); mbBuy(price); };
+}
+
+function mbBuy(price) {
+  if (state.coins < price) { toast('Not enough coins for this box'); return; }
+  const m = mbState();
+  const count = (m.pity[price] || 0) + 1;
+  const guaranteed = count >= MB_PITY;
+  m.pity[price] = guaranteed ? 0 : count;
+  addCoins(-price);
+  mbTap(price, mbRoll(price, guaranteed));
+}
+
+function mbTap(price, pick) {
+  const ov = $('mbTap');
+  let taps = 0;
+  ov.innerHTML = `<div class="mb-center">
+      <div class="mb-tapHint">Tap the box to open it</div>
+      <button class="mb-tapBox" id="mbTapBox" style="${mbBoxArt(price)}">🎁</button>
+      <div class="mb-tapCount" id="mbTapCount">0/5</div></div>`;
+  ov.classList.add('on');
+  $('mbTapBox').onclick = () => {
+    if (taps >= 5) return;
+    taps++;
+    const b = $('mbTapBox');
+    b.classList.remove('mb-shake'); void b.offsetWidth; b.classList.add('mb-shake');
+    $('mbTapCount').textContent = `${taps}/5`;
+    if (taps === 5) setTimeout(() => mbReveal(pick), 350);
+  };
+}
+
+function mbReveal(pick) {
+  const m = mbState();
+  const dup = m.rolled.some(r => r.name === pick.name) || mbOwned(pick.name);
+  const id = m.nextId++;
+  m.rolled.push({ id, name: pick.name });
+  m.stage[id] = 0;
+  m.sel = id;
+  save();
+  $('mbTap').innerHTML = `<div class="mb-center">
+      <div class="mb-tapHint">${pick.guaranteed ? 'Pity reached. Guaranteed pull!' : 'You got'}</div>
+      <div class="mb-reveal">${PETS[mbIdx(pick.name)].e}</div>
+      <div class="mb-tapName">${pick.name}</div>
+      <div class="mb-tapTier">${pick.tier}</div>
+      <div class="mb-tapNote">${dup ? 'Repeat pet. It was added to your rolled pets as a separate copy.' : 'Added as locked. Use Pet Points to unlock it.'}</div>
+      <button class="bfight" id="mbContinue" style="width:100%">Continue</button></div>`;
+  $('mbContinue').onclick = () => { $('mbTap').classList.remove('on'); renderMystery(); };
+}
+
+function mbUnlock() {
+  const m = mbState();
+  const r = m.rolled.find(x => x.id === m.sel);
+  if (!r) return;
+  const st = m.stage[r.id] || 0;
+  if (st >= 5) return;
+  const cost = MB_STAGE_COST[st];
+  if ((state.petPoints || 0) < cost) { toast('Not enough Pet Points'); return; }
+  state.petPoints -= cost;
+  m.stage[r.id] = st + 1;
+  if (st + 1 === 5) {
+    const idx = mbIdx(r.name);
+    if (mbOwned(r.name)) toast(`${r.name} is already in your pets. This copy was merged.`);
+    else { state.pets.push({ idx, level: 1 }); toast(`${r.name} has been moved to your pets!`); }
+    m.rolled = m.rolled.filter(x => x.id !== r.id);
+    delete m.stage[r.id];
+    m.sel = m.rolled.length ? m.rolled[0].id : null;
+  }
+  save();
+  renderMystery();
+}
+
+$('mbBoxes').onclick = e => { const b = e.target.closest('.mb-box'); if (b) mbOpenSheet(Number(b.dataset.price)); };
+$('mbRolled').onclick = e => { const t = e.target.closest('.mb-tile'); if (t) { mbState().sel = Number(t.dataset.id); save(); renderMystery(); } };
+$('mbActive').onclick = e => { if (e.target.closest('#mbUnlockBtn')) mbUnlock(); };
+
+$('toShopMb').onclick = () => showView('shop');
 </script>
 </body>
 </html>
