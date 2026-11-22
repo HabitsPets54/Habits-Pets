@@ -336,6 +336,33 @@ input { -webkit-user-select: text; user-select: text; }
   .mb-row1 { display:flex; justify-content:space-between; align-items:center; gap:8px; }
   .gp-soon { text-align:center; padding:30px 0; color:var(--muted); }
   .gp-soon b { display:block; font-size:18px; color:var(--text); margin-top:6px; }
+
+  .pg-ov { position:fixed; inset:0; background:#0b0a16; display:none; align-items:center; justify-content:center; padding:72px 16px 24px; z-index:31; }
+  .pg-ov.on { display:flex; }
+  .pg-wrap { width:100%; max-width:360px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .pg-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; width:100%; }
+  .pg-pick { background:rgba(0,0,0,.2); border:1px solid var(--line); border-radius:14px; padding:10px 4px; color:var(--text); font:inherit; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .pg-pick .face { width:64px; height:64px; display:flex; align-items:center; justify-content:center; }
+  .pg-pick small { font-size:11px; }
+  .pg-dirty { filter: grayscale(.7) brightness(.55) sepia(.6); }
+  .pg-stage { position:relative; width:260px; height:260px; background:rgba(255,255,255,.04); border-radius:24px; border:1px solid var(--line); overflow:hidden; }
+  .pg-spot { position:absolute; width:34px; height:34px; border-radius:50%; background: radial-gradient(circle, #6d4c2e 0%, #4a3220 60%, transparent 72%); cursor:pointer; }
+  .pg-spot.cleaned { animation: pgPop .35s forwards; pointer-events:none; }
+  @keyframes pgPop { to { transform:scale(1.8); opacity:0; } }
+  .pg-sparkle { position:absolute; font-size:22px; pointer-events:none; animation: pgSpark .5s forwards; }
+  @keyframes pgSpark { to { transform: translateY(-30px) scale(1.4); opacity:0; } }
+  .pg-bushrow { display:flex; justify-content:space-around; align-items:flex-end; width:100%; }
+  .pg-bush { font-size:64px; cursor:pointer; display:inline-block; }
+  .pg-rustle { animation: pgRustle .35s 3; }
+  @keyframes pgRustle { 25% { transform:rotate(-8deg); } 75% { transform:rotate(8deg); } }
+  .pg-count { font-size:72px; font-weight:800; color:var(--gold); }
+  .pg-pet { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:150px; line-height:1; }
+  .pg-pet img { width:200px; height:200px; }
+  .pg-spot { width:40px; height:34px; border-radius:50% 45% 55% 50%; }
+  .pg-face { font-size:56px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; margin:0 auto; }
+  .pg-face img { width:64px; height:64px; }
+  .pg-reveal { animation: pgUncover .5s forwards; }
+  @keyframes pgUncover { 0% { transform:translateY(0) scale(1); } 40% { transform:translateY(-14px) scale(0.6); opacity:0.2; } 100% { transform:translateY(-6px) scale(1); opacity:1; } }
 </style>
 </head>
 <body>
@@ -552,6 +579,7 @@ input { -webkit-user-select: text; user-select: text; }
     <div class="bb-sec"><div class="bb-h">Menu</div><div class="bb-menu" id="bbMenu"></div></div>
   </section>
   <div class="bb-ov" id="bbOv"></div>
+  <div class="pg-ov" id="ppOv"></div>
   <section class="view" id="view-secret">
     <div class="bb-top">
       <div class="bb-row1">
@@ -562,7 +590,7 @@ input { -webkit-user-select: text; user-select: text; }
     </div>
     <div class="bb-sec" id="ssOwnedSec"><div class="bb-h">Your secret pets</div><div id="ssOwned"></div></div>
     <div class="bb-sec"><div class="bb-h">For sale</div><div class="ss-grid four" id="ssShop"></div></div>
-    <div class="bb-sec"><div class="bb-h">Daily tasks</div><div id="ssTasks"></div><button class="bfight" id="ssClaim" style="width:100%;margin-top:12px" disabled>Claim</button></div>
+    <div class="bb-sec"><div class="bb-h">Daily tasks</div><div id="ssStreak"></div><div id="ssTasks"></div><button class="bfight" id="ssClaim" style="width:100%;margin-top:12px" disabled>Claim</button></div>
   </section>
   <div class="bb-ov" id="ssOv"></div>
   <section class="view" id="view-profile">
@@ -681,7 +709,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-34';
+const APP_VERSION = '2026-11-21-42';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -1021,6 +1049,15 @@ let gr = null;
 const COIN_IDS = ['coins1', 'coins2', 'coins3', 'coins4', 'coins6', 'cosCoins', 'gameCoins', 'bbCoins', 'ssCoins'];
 function setCoinsUI() { COIN_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = fmtCoins(state.coins); }); const ex = document.getElementById('coinsExact'); if (ex) ex.textContent = state.coins.toLocaleString(); }
 function addCoins(n) { state.coins = Math.max(0, state.coins + n); if (n > 0) { stat('coinsEarned', n); sfx('coin'); } save(); setCoinsUI(); checkAch(); }
+// In-game counter: Pet Points for the Pet Points games, coins for the rest
+let ppGameOn = false;
+function syncGameCounter() {
+  const el = document.getElementById('gameCoins');
+  if (!el) return;
+  el.parentElement.innerHTML = ppGameOn ? `🐾 <b id="gameCoins">${fmtCoins(state.petPoints || 0)}</b>` : `🪙 <b id="gameCoins">${fmtCoins(state.coins)}</b>`;
+}
+const _ppSetCoinsUI = setCoinsUI;
+setCoinsUI = function () { _ppSetCoinsUI(); syncGameCounter(); };
 function sizeGame() { const r = devicePixelRatio || 1; gameCv.width = gameCv.clientWidth * r; gameCv.height = gameCv.clientHeight * r; gx.setTransform(r, 0, 0, r, 0, 0); }
 function startGame(id) {
   $('ctl').style.display = 'none';
@@ -1035,6 +1072,11 @@ function startGame(id) {
   if (id === 'memory') { startMemory(); return; }
   if (id === 'mines') { startMines(); return; }
   if (id === 'sniper') { startSniper(); return; }
+  if (id === 'groom') { startGroom(); return; }
+  if (id === 'hide') { startHide(); return; }
+  if (id === 'treat') { startTreat(); return; }
+  if (id === 'pjump') { startPJump(); return; }
+  if (id === 'bath') { startBath(); return; }
   if (id === 'alien') { startAlien(); return; }
   $('wordBox').style.display = 'none'; gameCv.style.display = ''; startMusic(id);
   gr = { id, t: 0, last: performance.now(), px: 0, pointer: null, objs: [], spawn: 0, acc: 0, earned: 0, over: false, timer: 15, board: id === 'candy' ? newBoard() : null, sel: null, strikes: 0 };
@@ -1127,6 +1169,8 @@ gameCv.onpointerdown = e => {
   if (gr.id === 'memory') { memoryTap(e); return; }
   if (gr.id === 'mines') { minesDown(e); return; }
   if (gr.id === 'sniper') { sniperTap(e); return; }
+  if (gr.id === 'pjump') { pjumpTap(); return; }
+  if (gr.id === 'bath') { bathTap(e); return; }
   if (gr.id === 'alien') { gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; return; }
   if (gr.id === 'flappy') { flappyTap(); return; }
   if (gr.id === 'shoot') { gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; gr.downX = gr.pointer; gr.aim = Math.max(-1.35, Math.min(1.35, Math.atan((gr.pointer - gameCv.clientWidth / 2) / (gameCv.clientHeight * 0.35)))); return; }
@@ -1501,6 +1545,11 @@ document.addEventListener('keydown', e => {
 $('wkb').onclick = e => { const b = e.target.closest('button[data-k]'); if (b) wkey(b.dataset.k); };
 // Music: synthesized live with Web Audio, no files needed. Each game has its own track.
 const TRACKS = {
+  treat: { bpm: 112, wave: 'triangle', root: 60, vol: 0.08, lead: [0, 2, 4, 2, 7, 4, 2, 0, 0, 2, 4, 5, 7, null, 4, null], bass: [-12, null, null, null, -12, null, null, null, -9, null, null, null, -7, null, null, null], drums: 'k.h.s.h.k.h.s.h.' },
+  groom: { bpm: 90, wave: 'sine', root: 52, vol: 0.1, lead: [0, null, null, 4, null, null, 7, null, null, 4, null, null, 2, null, null, null], bass: [-12, null, null, null, null, null, null, null, -12, null, null, null, -10, null, null, null], drums: 'k.......k.......' },
+  hide: { bpm: 104, wave: 'square', root: 55, vol: 0.07, lead: [0, null, 3, null, 5, null, 3, null, 0, null, -2, null, 0, null, null, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -12, null, null, null], drums: 'k.s.k..s.k.s.k.s' },
+  pjump: { bpm: 136, wave: 'sawtooth', root: 64, vol: 0.06, lead: [0, null, 0, 7, null, 0, null, 12, 0, null, 0, 7, null, 10, null, 12], bass: [-12, null, -12, null, -12, null, -12, null, -9, null, -9, null, -7, null, -7, null], drums: 'k.h.k.h.k.h.k.h.' },
+  bath: { bpm: 100, wave: 'sine', root: 67, vol: 0.08, lead: [7, null, null, 9, null, 7, null, null, 5, null, null, 7, null, 4, null, null], bass: [-12, null, null, null, -12, null, null, null, -8, null, null, null, -10, null, null, null], drums: 'k...h...k...h...' },
   sniper: { bpm: 120, wave: 'triangle', root: 58, vol: 0.09, lead: [0, null, 0, null, 3, null, 5, null, 7, null, 5, null, 3, null, 0, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -8, null, null, null], drums: 'k.h.k.h.s.h.k.h.' },
   alien: { bpm: 128, wave: 'square', root: 57, vol: 0.07, lead: [0, null, 3, null, 5, null, 7, null, 5, null, 3, null, 0, null, null, null], bass: [-12, null, null, null, -12, null, null, null, -9, null, null, null, -7, null, null, null], drums: 'k.h.k.h.s.h.k.hk' },
   mines: { bpm: 110, wave: 'triangle', root: 55, vol: 0.09, lead: [0, null, 3, null, 7, null, 3, null, 0, null, 5, null, 7, null, 10, null], bass: [-12, null, null, null, -12, null, null, null, -9, null, null, null, -7, null, null, null], drums: 'k...h...k...h...' },
@@ -3577,7 +3626,12 @@ const GAME_CARDS = {
   memory: { ico: '🃏', name: 'Memory Match', desc: 'Find the matching pairs. Once a day', cat: 'Puzzle' },
   mines: { ico: '💣', name: 'Minesweeper', desc: 'Open safe cells and avoid the mines. Once a day', cat: 'Puzzle' },
   alien: { ico: '👾', name: 'Alien Invasion', desc: 'Shoot down the alien waves before they land', cat: 'Shooter' },
-  sniper: { ico: '🎯', name: 'Sniper Watch', desc: 'Tap to shoot targets before they vanish. 5 misses and you are out', cat: 'Shooter' }
+  sniper: { ico: '🎯', name: 'Sniper Watch', desc: 'Tap to shoot targets before they vanish. 5 misses and you are out', cat: 'Shooter' },
+  treat: { ico: '🥣', name: 'Treat Catch', desc: 'Catch falling treats in your bowl. Pays Pet Points', cat: 'Pet Points' },
+  groom: { ico: '🧽', name: 'Pet Groom', desc: 'Clean every dirt spot on your pet. Once a day', cat: 'Pet Points' },
+  hide: { ico: '🌳', name: 'Hide and Seek', desc: 'Find your hidden pet in 3 tries. Once a day', cat: 'Pet Points' },
+  pjump: { ico: '🐶', name: 'Puppy Jump', desc: 'Tap to jump over the rocks. Pays Pet Points', cat: 'Pet Points' },
+  bath: { ico: '🛁', name: 'Bubble Bath', desc: 'Pop the bubbles before they float away. Pays Pet Points', cat: 'Pet Points' }
 };
 const GAME_CATS = ['Arcade', 'Puzzle', 'Shooter', 'Pet Points'];
 function renderGames() {
@@ -3877,7 +3931,7 @@ function duckDraw(W, H) {
 }
 // Per-game stats: recorded each time a game ends, shown in the Stats tab, and used for achievements.
 const GAME_STAT_IDS = ['dodge', 'bubble', 'candy', 'tetris', 'blast', 'shoot', 'duck', 'zombie'];
-const GAME_STAT_NAMES = { sniper: 'Sniper Watch', alien: 'Alien Invasion', mines: 'Minesweeper', brick: 'Breakout', flappy: 'Flappy Pet', memory: 'Memory Match', dodge: 'Neon Dodge', bubble: 'Bubble Catcher', candy: 'Candy Match', tetris: 'Tetris', blast: 'Block Blast', shoot: 'Bubble Shooter', duck: 'Duck Hunt', zombie: 'Zombie Survivor' };
+const GAME_STAT_NAMES = { treat: 'Treat Catch', groom: 'Pet Groom', hide: 'Hide and Seek', pjump: 'Puppy Jump', bath: 'Bubble Bath', sniper: 'Sniper Watch', alien: 'Alien Invasion', mines: 'Minesweeper', brick: 'Breakout', flappy: 'Flappy Pet', memory: 'Memory Match', dodge: 'Neon Dodge', bubble: 'Bubble Catcher', candy: 'Candy Match', tetris: 'Tetris', blast: 'Block Blast', shoot: 'Bubble Shooter', duck: 'Duck Hunt', zombie: 'Zombie Survivor' };
 function recordGameEnd() {
   if (!gr || !gr.id) return;
   state.gstats = state.gstats || {};
@@ -4200,14 +4254,10 @@ function updateGamesCounter() {
   }
 }
 const CAT_ICO = { Arcade: '🕹️', Puzzle: '🧩', Shooter: '🎯', 'Pet Points': '🐾' };
-const CAT_SUB = { Arcade: 'Fast and endless games', Puzzle: 'Brain teasers and block games', Shooter: 'Aim and blast bubbles', 'Pet Points': 'Coming soon' };
+const CAT_SUB = { Arcade: 'Fast and endless games', Puzzle: 'Brain teasers and block games', Shooter: 'Aim and blast bubbles', 'Pet Points': 'Pet games that pay Pet Points' };
 renderGames = function () {
   const box = $('gameList');
   updateGamesCounter();
-  if (gameCat === 'Pet Points') {
-    box.innerHTML = `<button class='btn-soft' data-cat='back' style='margin-bottom:12px'>‹ Games</button><div class='gp-soon'><div style='font-size:40px'>🐾</div><b>Coming soon</b></div>`;
-    return;
-  }
   if (!gameCat) {
     box.innerHTML = GAME_CATS.map(cat => `<button class='shopCard' data-cat='${cat}'><div class='sc-ico'>${CAT_ICO[cat]}</div><div><b>${cat}</b><div class='sub'>${CAT_SUB[cat]}</div></div></button>`).join('');
     return;
@@ -5584,15 +5634,21 @@ SEC_PETS.forEach(d => {
 
 function secSeq(a, b, s = 1) { const r = []; for (let x = a; x <= b; x += s) r.push(x); return r; }
 const SEC_TYPES = [
-  { k: 'streak', t: g => `Complete all 3 habits for ${g} days in a row`, goals: secSeq(2, 16) },
   { k: 'duelWins', t: g => `Win ${g} duels in one day`, goals: secSeq(1, 15) },
   { k: 'gamesPlayed', t: g => `Play ${g} mini-games in one day`, goals: secSeq(3, 22) },
   { k: 'coinsEarned', t: g => `Earn ${g} coins in one day`, goals: secSeq(100, 700, 25) },
   { k: 'bobaDrinks', t: g => `Drink ${g} boba in one day`, goals: secSeq(1, 10) },
-  { k: 'gold', t: g => `Catch ${g} gold bubbles in one day`, goals: secSeq(10, 150, 10) }
+  { k: 'gold', t: g => `Catch ${g} gold bubbles in one day`, goals: secSeq(10, 150, 10) },
+  { k: 'treats', t: g => `Catch ${g} treats in one day`, goals: [20, 40, 60] },
+  { k: 'rocks', t: g => `Clear ${g} rocks in one day`, goals: [20, 40] },
+  { k: 'bubbles', t: g => `Pop ${g} bubbles in one day`, goals: [30, 60, 90] },
+  { k: 'snipes', t: g => `Hit ${g} sniper targets in one day`, goals: [15, 30, 45] },
+  { k: 'wordsWon', t: g => `Solve today's Daily Word`, goals: [1] },
+  { k: 'memWins', t: g => `Win a Memory Match board`, goals: [1] },
+  { k: 'mineWins', t: g => `Clear ${g} Minesweeper boards in one day`, goals: [1, 2] }
 ];
 const SEC_TASKS = SEC_TYPES.flatMap(ty => ty.goals.map(g => ({ k: ty.k, g, text: ty.t(g) })));
-const SEC_STAT_MAP = { habitsDone: 'habitsDone', bossKills: 'bossKills', coinsEarned: 'coinsEarned', gold: 'gold' };
+const SEC_STAT_MAP = { habitsDone: 'habitsDone', bossKills: 'bossKills', coinsEarned: 'coinsEarned', gold: 'gold', wordsWon: 'wordsWon' };
 
 function secRng(str) {
   let h = 2166136261;
@@ -5654,12 +5710,13 @@ function renderSecret() {
     return `<div class="ss-task ${done ? 'done' : ''}"><span class="ss-box">${done ? '✓' : ''}</span><span class="t">${t.text}</span><span class="ss-prog">${Math.min(v, t.g)}/${t.g}</span></div>`;
   }).join('');
 
+  renderSecretStreak(owned);
   const allDone = s.picks.every(secDone);
   const btn = $('ssClaim');
   if (s.claimed) { btn.textContent = 'Claimed today'; btn.disabled = true; }
   else if (!allDone) { btn.textContent = 'Finish all 5 tasks to claim'; btn.disabled = true; }
   else if (!owned.length) { btn.textContent = 'Buy a secret pet to claim'; btn.disabled = true; }
-  else { btn.textContent = 'Claim'; btn.disabled = false; }
+  else { btn.textContent = secStreak() >= SEC_STREAK_GOALS[Math.min(s.sgIdx || 0, SEC_STREAK_GOALS.length - 1)] ? 'Claim +30 XP' : 'Claim +5 XP'; btn.disabled = false; }
 }
 
 function secShow(html) { const ov = $('ssOv'); ov.innerHTML = `<div class="bb-center">${html}</div>`; ov.classList.add('on'); }
@@ -5699,6 +5756,8 @@ $('ssOwned').onclick = e => {
 $('ssClaim').onclick = () => {
   const s = secDay(), owned = secOwnedList();
   if (s.claimed || !owned.length || !s.picks.every(secDone)) return;
+  const idx = Math.min(s.sgIdx || 0, SEC_STREAK_GOALS.length - 1);
+  const bonus = secStreak() >= SEC_STREAK_GOALS[idx];
   secShow(`<div class="bb-h">Choose a pet</div>
     <div class="ss-grid">${owned.map(n => `<button class="ss-tile" data-cp="${n}">${bbFace(secIdx(n), 48)}<div style="font-size:12px">${n}</div></button>`).join('')}</div>
     <button class="btn-soft" id="ssBack2" style="width:100%">Back</button>`);
@@ -5707,13 +5766,9 @@ $('ssClaim').onclick = () => {
     const b = e.target.closest('[data-cp]');
     if (!b) return;
     const n = b.dataset.cp;
-    s.xp[n] = Math.min(1000, (s.xp[n] || 0) + 5);
     s.claimed = true;
-    if (s.xp[n] >= 1000) {
-      s.completed[n] = true;
-      state.pets.push({ idx: secIdx(n), level: 5 });
-      toast(`${n} has been moved to your pets!`);
-    } else toast(`+5 XP for ${n}`);
+    secAddXp(s, n, 5);
+    if (bonus) { secAddXp(s, n, 25); s.sgIdx = Math.min(idx + 1, SEC_STREAK_GOALS.length - 1); }
     save();
     $('ssOv').onclick = null;
     $('ssOv').classList.remove('on');
@@ -6042,7 +6097,7 @@ function memoryTick(now) {
       if (a.s === b.s) {
         a.matched = true; b.matched = true; gr.matched++; gr.earned += 5; addCoins(5);
         gr.pops.push({ x: gr.lay.ox + gr.lay.cell * 2, y: gr.lay.oy - 14, txt: '+5', col: '#ffd23f', life: 1 });
-        if (gr.matched === 8) { gr.earned += 20; addCoins(20); gameOver(`Board cleared! You earned ${gr.earned} 🪙`); }
+        if (gr.matched === 8) { gr.earned += 20; addCoins(20); secTrack('memWins', 1); gameOver(`Board cleared! You earned ${gr.earned} 🪙`); }
       } else { a.open = false; b.open = false; }
       gr.open = []; gr.lock = false;
     }
@@ -6130,7 +6185,7 @@ function minesReveal(i) {
     if (ck.adj === 0) for (const nb of minesNeighbors(k)) if (!gr.cells[nb].open) stack.push(nb);
   }
   if (n > 0) { gr.earned += n; addCoins(n); gr.pops.push({ x: gameCv.clientWidth / 2, y: 80, txt: `+${n}`, col: '#ffd23f', life: 1 }); }
-  if (!gr.over && gr.cells.every(x => x.mine || x.open)) { gr.earned += 30; addCoins(30); gameOver(`Board cleared! You earned ${gr.earned} 🪙`); }
+  if (!gr.over && gr.cells.every(x => x.mine || x.open)) { gr.earned += 30; addCoins(30); secTrack('mineWins', 1); gameOver(`Board cleared! You earned ${gr.earned} 🪙`); }
 }
 function minesTick(now) {
   if (!gr || gr.id !== 'mines') return;
@@ -6256,7 +6311,7 @@ function sniperTap(e) {
   if (!hit) return;
   if (hit.col === gr.active) {
     gr.targets = gr.targets.filter(t => t !== hit);
-    gr.kills++; gr.earned += 3; addCoins(3);
+    gr.kills++; gr.earned += 3; addCoins(3); secTrack('snipes', 1);
     gr.pops.push({ x: hit.x, y: hit.y - 36, txt: '+3', col: '#ffd23f', life: 1 });
   } else {
     gr.targets = gr.targets.filter(t => t !== hit);
@@ -6344,6 +6399,262 @@ function sniperDraw(W, H) {
   gx.fillStyle = '#ffffff'; gx.font = '14px system-ui'; gx.textAlign = 'left'; gx.textBaseline = 'alphabetic';
   gx.fillText(`Misses left: ${5 - gr.misses}`, 10, 18);
   gameFxDraw(gr.pops);
+}
+
+// PET POINTS GAMES
+function ppAdd(n) { state.petPoints = (state.petPoints || 0) + n; save(); syncGameCounter(); }
+function ppDayOk(k) { state.ppDay = state.ppDay || {}; return state.ppDay[k] !== todayKey(); }
+function ppDayMark(k) { state.ppDay = state.ppDay || {}; state.ppDay[k] = todayKey(); save(); }
+function ppOverlay(html) { const ov = $('ppOv'); ov.innerHTML = `<div class="pg-wrap">${html}</div>`; ov.classList.add('on'); }
+function ppClose() { $('ppOv').classList.remove('on'); $('ppOv').onclick = null; stopMusic(); renderGames(); }
+function showPicker(title, dirty, onPick) {
+  const owned = state.pets;
+  ppOverlay(`<div class="bb-h">${title}</div><div class="pg-grid">${owned.map((p, i) => `<button class="pg-pick" data-i="${i}"><div class="face ${dirty ? 'pg-dirty' : ''}">${petHTML(p.idx, p.level)}</div><small>${PETS[p.idx].n}</small></button>`).join('')}</div><button class="btn-soft" id="pgBack">‹ Back</button>`);
+  $('pgBack').onclick = ppClose;
+  $('ppOv').onclick = e => { const b = e.target.closest('[data-i]'); if (b) onPick(owned[Number(b.dataset.i)]); };
+}
+function ppSetup(id, title, msg, music) {
+  gr = { id, t: 0, last: performance.now(), over: false, earned: 0, pops: [], pointer: null, lives: 3 };
+  $('gameOv').classList.add('on'); $('loseBox').classList.remove('on'); gameCv.style.display = ''; $('wordBox').style.display = 'none';
+  $('gameTitle').textContent = title; $('gameMsg').textContent = msg;
+  sizeGame(); startMusic(music);
+}
+function startGroom() {
+  if (!ppDayOk('groom')) { toast('Pet Groom is once a day. Come back tomorrow.'); return; }
+  if (!state.pets.length) { toast('Unlock a pet first'); return; }
+  startMusic('groom');
+  showPicker('Choose a pet to groom', true, groomStart);
+}
+function groomStart(p) {
+  ppDayMark('groom');
+  const n = 5 + Math.floor(Math.random() * 5);
+  let left = n, earned = 0;
+  ppOverlay(`<div class="bb-h">Clean every dirt spot</div>
+    <div class="pg-stage" id="pgStage"><div class="pg-pet">${petHTML(p.idx, p.level)}</div></div>
+    <div id="pgInfo">Spots left: ${left}</div>
+    <button class="btn-soft" id="pgQuit">Done</button>`);
+  const stage = $('pgStage');
+  const cells = [];
+  for (const x of [55, 115, 175]) for (const y of [55, 115, 175]) cells.push([x, y]);
+  cells.sort(() => Math.random() - 0.5);
+  for (let i = 0; i < n; i++) {
+    const [cx, cy] = cells[i];
+    const s = document.createElement('div');
+    s.className = 'pg-spot';
+    s.style.left = (cx + Math.random() * 10 - 5) + 'px'; s.style.top = (cy + Math.random() * 10 - 5) + 'px';
+    stage.appendChild(s);
+  }
+  stage.onclick = e => {
+    const s = e.target.closest('.pg-spot');
+    if (!s || s.classList.contains('cleaned')) return;
+    s.classList.add('cleaned');
+    const sp = document.createElement('div');
+    sp.className = 'pg-sparkle'; sp.textContent = '✨';
+    sp.style.left = s.style.left; sp.style.top = s.style.top;
+    stage.appendChild(sp);
+    setTimeout(() => { s.remove(); sp.remove(); }, 400);
+    left--; earned += 5; addCoins(5);
+    $('pgInfo').textContent = left > 0 ? `Spots left: ${left}` : `All clean! +${earned} coins`;
+  };
+  $('pgQuit').onclick = ppClose;
+}
+function startHide() {
+  if (!ppDayOk('hide')) { toast('Hide and Seek is once a day. Come back tomorrow.'); return; }
+  if (!state.pets.length) { toast('Unlock a pet first'); return; }
+  startMusic('hide');
+  showPicker('Choose a pet to hide', false, hideCountdown);
+}
+function hideCountdown(p) {
+  ppDayMark('hide');
+  let c = 3;
+  const step = () => {
+    if (c > 0) { ppOverlay(`<div class="bb-h">Get ready</div><div class="pg-count">${c}</div>`); c--; setTimeout(step, 900); }
+    else hideStart(p);
+  };
+  step();
+}
+function hideStart(p) {
+  const hideAt = Math.floor(Math.random() * 5);
+  let tries = 3, hintUsed = false, over = false;
+  const bushes = ['🌳', '🌿', '🌳', '🌿', '🌳'];
+  ppOverlay(`<div class="bb-h">Find your pet! <span id="pgTries">Tries: ${tries}</span></div>
+    <div class="pg-bushrow">${bushes.map((b, i) => `<span class="pg-bush" data-b="${i}">${b}</span>`).join('')}</div>
+    <div id="pgMsg" class="bb-muted" style="min-height:20px"></div>
+    <div class="ss-btns" style="width:100%"><button class="btn-soft" id="pgHint">Hint · 100 🪙</button><button class="btn-soft" id="pgQuit">Give up</button></div>`);
+  const rustle = el => { el.classList.remove('pg-rustle'); void el.offsetWidth; el.classList.add('pg-rustle'); };
+  const end = () => { over = true; $('pgHint').disabled = true; $('pgQuit').textContent = 'Done'; };
+  const revealHidden = () => {
+    const el = document.querySelector(`.pg-bush[data-b="${hideAt}"]`);
+    if (!el) return;
+    el.innerHTML = `<div class="pg-face">${petHTML(p.idx, p.level)}</div>`;
+    el.classList.add('pg-reveal');
+  };
+  $('ppOv').onclick = e => {
+    const b = e.target.closest('[data-b]');
+    if (!b || over) return;
+    rustle(b);
+    if (Number(b.dataset.b) === hideAt) {
+      ppAdd(20); end();
+      $('pgMsg').textContent = `Found ${PETS[p.idx].n}! +20 Pet Points`;
+    } else {
+      tries--;
+      $('pgTries').textContent = `Tries: ${tries}`;
+      if (tries <= 0) { end(); revealHidden(); $('pgMsg').textContent = `Out of tries. ${PETS[p.idx].n} was behind bush ${hideAt + 1}.`; }
+      else $('pgMsg').textContent = 'Not here. Try another bush.';
+    }
+  };
+  $('pgHint').onclick = () => {
+    if (hintUsed || over) return;
+    if (state.coins < 100) { toast('Not enough coins for a hint'); return; }
+    addCoins(-100); hintUsed = true;
+    rustle(document.querySelector(`.pg-bush[data-b="${hideAt}"]`));
+    $('pgMsg').textContent = 'Hint: listen to the rustle...';
+    $('pgHint').disabled = true;
+  };
+  $('pgQuit').onclick = ppClose;
+}
+function startTreat() {
+  ppSetup('treat', 'Treat Catch', 'Move the bowl to catch treats. Each treat pays 2 Pet Points. 3 misses ends the run.', 'treat');
+  gr.items = []; gr.spawnT = 0.8; gr.bowl = gameCv.clientWidth / 2;
+  requestAnimationFrame(treatTick);
+}
+function treatTick(now) {
+  if (!gr || gr.id !== 'treat') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  if (!gr.over) {
+    gr.t += dt;
+    if (gr.pointer !== null) gr.bowl = gr.pointer;
+    gr.bowl = Math.max(40, Math.min(W - 40, gr.bowl));
+    gr.spawnT -= dt;
+    if (gr.spawnT <= 0) { gr.items.push({ x: 20 + Math.random() * (W - 40), y: -20, e: ['🍖', '🦴', '🍪', '🍎'][Math.floor(Math.random() * 4)] }); gr.spawnT = Math.max(0.25, 1.0 - Math.floor(gr.t / 15) * 0.08); }
+    const sp = 120 + Math.floor(gr.t / 15) * 25 + gr.t * 2; // faster every 15s
+    for (const it of gr.items) {
+      if (it.done) continue;
+      it.y += sp * dt;
+      if (it.y > H - 74 && Math.abs(it.x - gr.bowl) < 44) { it.done = true; gr.earned += 2; ppAdd(2); secTrack('treats', 1); gr.pops.push({ x: it.x, y: H - 90, txt: '+2', col: '#ffd23f', life: 1 }); }
+      else if (it.y > H) { it.done = true; gr.lives--; gr.pops.push({ x: it.x, y: H - 90, txt: 'MISS', col: '#ff5252', life: 1 }); if (gr.lives <= 0) gameOver(`You earned ${gr.earned} Pet Points`); }
+    }
+    gr.items = gr.items.filter(it => !it.done);
+    gameFx(gr.pops, dt);
+  }
+  const bg = gx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#fff4e0'); bg.addColorStop(1, '#ffe0b2');
+  gx.fillStyle = bg; gx.fillRect(0, 0, W, H);
+  gx.fillStyle = '#000000'; gx.textAlign = 'center'; gx.textBaseline = 'middle'; gx.font = '26px system-ui';
+  for (const it of gr.items) gx.fillText(it.e, it.x, it.y);
+  gx.font = '34px system-ui'; gx.fillText('🥣', gr.bowl, H - 50);
+  gx.fillStyle = '#1b2a4a'; gx.font = '14px system-ui'; gx.textAlign = 'left'; gx.textBaseline = 'alphabetic';
+  gx.fillText(`Misses left: ${gr.lives}`, 10, 18);
+  gameFxDraw(gr.pops);
+  if (!gr.over) requestAnimationFrame(treatTick);
+}
+function startPJump() {
+  ppSetup('pjump', 'Puppy Jump', 'Tap to jump over the rocks. Each rock you clear pays 2 Pet Points. Hitting a rock ends the run.', 'pjump');
+  gr.gy = gameCv.clientHeight - 100; gr.py = gr.gy; gr.vy = 0; gr.obs = []; gr.spawnT = 1.2; gr.t = 0;
+  requestAnimationFrame(pjumpTick);
+}
+function pjumpTap() { if (gr && gr.id === 'pjump' && !gr.over && gr.py >= gr.gy - 0.5) gr.vy = -520; }
+function pjumpTick(now) {
+  if (!gr || gr.id !== 'pjump') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  gr.gy = H - 100;
+  if (!gr.over) {
+    gr.t += dt;
+    const speed = 180 + Math.floor(gr.t / 15) * 30 + gr.t * 2; // faster every 15s
+    gr.spawnT -= dt;
+    if (gr.spawnT <= 0) { gr.obs.push({ x: W + 20, w: 24, h: 30 + Math.random() * 26, passed: false }); gr.spawnT = Math.max(0.55, 1.6 - Math.floor(gr.t / 15) * 0.12) * (0.8 + Math.random() * 0.4); }
+    gr.vy += 1400 * dt; gr.py += gr.vy * dt;
+    if (gr.py >= gr.gy) { gr.py = gr.gy; gr.vy = 0; }
+    for (const o of gr.obs) {
+      o.x -= speed * dt;
+      if (!o.passed && o.x + o.w < 70) { o.passed = true; gr.earned += 2; ppAdd(2); secTrack('rocks', 1); gr.pops.push({ x: 70, y: gr.gy - 60, txt: '+2', col: '#ffd23f', life: 1 }); }
+      const petL = 56, petR = 88, top = gr.gy - o.h;
+      if (petR > o.x && petL < o.x + o.w && gr.py > top) { gameOver(`You hit a rock. You earned ${gr.earned} Pet Points`); break; }
+    }
+    gr.obs = gr.obs.filter(o => o.x > -40);
+    gameFx(gr.pops, dt);
+  }
+  const sky = gx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#bfe9ff'); sky.addColorStop(1, '#eaf8ff');
+  gx.fillStyle = sky; gx.fillRect(0, 0, W, H);
+  gx.fillStyle = '#8bc34a'; gx.fillRect(0, gr.gy, W, H - gr.gy);
+  gx.fillStyle = '#8d6e63';
+  for (const o of gr.obs) gx.fillRect(o.x, gr.gy - o.h, o.w, o.h);
+  gx.fillStyle = '#000000'; gx.textAlign = 'center'; gx.textBaseline = 'alphabetic'; gx.font = '36px system-ui';
+  gx.fillText('🐶', 70, gr.py);
+  gameFxDraw(gr.pops);
+  if (!gr.over) requestAnimationFrame(pjumpTick);
+}
+function startBath() {
+  ppSetup('bath', 'Bubble Bath', 'Tap the bubbles before they float away. Each bubble pays 1 Pet Points. 3 bubbles escaping ends the run.', 'bath');
+  gr.bubbles = []; gr.spawnT = 0.6; gr.t = 0;
+  requestAnimationFrame(bathTick);
+}
+function bathTap(e) {
+  const rect = gameCv.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
+  let best = null, bd = 1e9;
+  for (const b of gr.bubbles) { const d = Math.hypot(b.x - x, b.y - y); if (d <= b.r + 6 && d < bd) { best = b; bd = d; } }
+  if (!best) return;
+  gr.bubbles = gr.bubbles.filter(b => b !== best);
+  gr.earned += 1; ppAdd(1); secTrack('bubbles', 1);
+  gr.pops.push({ x: best.x, y: best.y, txt: '+1', col: '#ffd23f', life: 0.8 });
+}
+function bathTick(now) {
+  if (!gr || gr.id !== 'bath') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  if (!gr.over) {
+    gr.t += dt;
+    gr.spawnT -= dt;
+    if (gr.spawnT <= 0) { gr.bubbles.push({ x: 30 + Math.random() * (W - 60), y: H + 30, r: 14 + Math.random() * 16, v: 60 + Math.random() * 80 }); gr.spawnT = Math.max(0.25, 0.9 - Math.floor(gr.t / 15) * 0.07); }
+    for (const b of gr.bubbles) b.y -= (b.v + Math.floor(gr.t / 15) * 25) * dt; // faster every 15s
+    const lost = gr.bubbles.filter(b => b.y < -b.r);
+    if (lost.length) {
+      gr.bubbles = gr.bubbles.filter(b => b.y >= -b.r);
+      gr.lives -= lost.length;
+      gr.pops.push({ x: W / 2, y: 60, txt: 'LOST', col: '#ff5252', life: 1 });
+      if (gr.lives <= 0) gameOver(`You earned ${gr.earned} Pet Points`);
+    }
+    gameFx(gr.pops, dt);
+  }
+  const bg = gx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#d6f2ff'); bg.addColorStop(1, '#a6dcff');
+  gx.fillStyle = bg; gx.fillRect(0, 0, W, H);
+  for (const b of gr.bubbles) {
+    gx.fillStyle = 'rgba(255,255,255,0.55)'; gx.beginPath(); gx.arc(b.x, b.y, b.r, 0, 7); gx.fill();
+    gx.strokeStyle = '#7ec8ff'; gx.lineWidth = 2; gx.beginPath(); gx.arc(b.x, b.y, b.r, 0, 7); gx.stroke(); gx.lineWidth = 1;
+    gx.fillStyle = '#ffffff'; gx.beginPath(); gx.arc(b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.22, 0, 7); gx.fill();
+  }
+  gx.fillStyle = '#1b2a4a'; gx.font = '14px system-ui'; gx.textAlign = 'left'; gx.textBaseline = 'alphabetic';
+  gx.fillText(`Bubbles left to lose: ${gr.lives}`, 10, 18);
+  gameFxDraw(gr.pops);
+  if (!gr.over) requestAnimationFrame(bathTick);
+}
+
+// Start a game: set the in-game counter for its currency
+const _ppStartGame = startGame;
+startGame = function (id) {
+  ppGameOn = ['treat', 'groom', 'hide', 'pjump', 'bath'].includes(id);
+  const r = _ppStartGame(id);
+  syncGameCounter();
+  return r;
+};
+
+// Streak goal: a standing goal above the daily tasks. Finishing it gives XP to a pet you pick.
+const SEC_STREAK_GOALS = [3, 7, 14, 30];
+function secAddXp(s, n, amount) {
+  if (s.completed[n]) return;
+  s.xp[n] = Math.min(1000, (s.xp[n] || 0) + amount);
+  if (s.xp[n] >= 1000) {
+    s.completed[n] = true;
+    state.pets.push({ idx: secIdx(n), level: 5 });
+    toast(`${n} has been moved to your pets!`);
+  } else toast(`+${amount} XP for ${n}`);
+}
+function renderSecretStreak(owned) {
+  const s = secDay();
+  const idx = Math.min(s.sgIdx || 0, SEC_STREAK_GOALS.length - 1);
+  const N = SEC_STREAK_GOALS[idx], cur = secStreak(), done = cur >= N;
+  $('ssStreak').innerHTML = `<div class="ss-task ${done ? 'done' : ''}"><span class="ss-box">${done ? '✓' : ''}</span><span class="t">Complete all 3 habits for ${N} days in a row</span><span class="ss-prog">${Math.min(cur, N)}/${N}</span></div>`;
 }
 </script>
 </body>
