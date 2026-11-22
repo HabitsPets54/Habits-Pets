@@ -679,7 +679,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-7';
+const APP_VERSION = '2026-11-21-9';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -5554,12 +5554,11 @@ SEC_PETS.forEach(d => {
 function secSeq(a, b, s = 1) { const r = []; for (let x = a; x <= b; x += s) r.push(x); return r; }
 const SEC_TYPES = [
   { k: 'streak', t: g => `Complete all 3 habits for ${g} days in a row`, goals: secSeq(2, 16) },
-  { k: 'bossKills', t: g => `Defeat ${g} bosses in one day`, goals: secSeq(1, 10) },
   { k: 'duelWins', t: g => `Win ${g} duels in one day`, goals: secSeq(1, 15) },
-  { k: 'gamesPlayed', t: g => `Play ${g} mini-games in one day`, goals: secSeq(3, 17) },
-  { k: 'coinsEarned', t: g => `Earn ${g} coins in one day`, goals: secSeq(200, 1600, 100).concat(secSeq(1700, 2600, 100)) },
+  { k: 'gamesPlayed', t: g => `Play ${g} mini-games in one day`, goals: secSeq(3, 22) },
+  { k: 'coinsEarned', t: g => `Earn ${g} coins in one day`, goals: secSeq(100, 700, 25) },
   { k: 'bobaDrinks', t: g => `Drink ${g} boba in one day`, goals: secSeq(1, 10) },
-  { k: 'gold', t: g => `Catch ${g} gold bubbles in one day`, goals: secSeq(10, 100, 10) }
+  { k: 'gold', t: g => `Catch ${g} gold bubbles in one day`, goals: secSeq(10, 150, 10) }
 ];
 const SEC_TASKS = SEC_TYPES.flatMap(ty => ty.goals.map(g => ({ k: ty.k, g, text: ty.t(g) })));
 const SEC_STAT_MAP = { habitsDone: 'habitsDone', bossKills: 'bossKills', coinsEarned: 'coinsEarned', gold: 'gold' };
@@ -5637,10 +5636,26 @@ function secShow(html) { const ov = $('ssOv'); ov.innerHTML = `<div class="bb-ce
 $('ssShop').onclick = e => {
   const b = e.target.closest('[data-sec]');
   if (!b) return;
-  const s = secDay();
-  s.sel = b.dataset.sec;
-  save();
-  renderSecret();
+  const n = b.dataset.sec, s = secDay(), idx = secIdx(n);
+  if (s.bought[n]) { s.sel = n; save(); renderSecret(); return; }
+  const d = SEC_PETS.find(x => x.n === n), st = petStatsOf({ idx, level: 5 });
+  secShow(`<div class="bb-h">${n}</div>
+    <div style="display:flex;justify-content:center">${bbFace(idx, 150)}</div>
+    <div class="ss-prev" id="ssPrev" style="display:none">HP ${st.hp} · Attack ${st.atk}<br>Special: ${d.sp.n}. ${d.desc}</div>
+    <div class="ss-btns">
+      <button class="bfight" id="ssBuy">Buy</button>
+      <button class="btn-soft" id="ssPreview">Preview</button>
+      <button class="btn-soft" id="ssCancel">Cancel</button>
+    </div>`);
+  $('ssOv').classList.add('on');
+  $('ssPreview').onclick = () => { const p = $('ssPrev'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; };
+  $('ssCancel').onclick = () => { $('ssOv').classList.remove('on'); };
+  $('ssBuy').onclick = () => {
+    s.bought[n] = true; s.sel = n; save();
+    toast(`${n} is unlocked`);
+    $('ssOv').classList.remove('on');
+    renderSecret();
+  };
 };
 $('ssOwned').onclick = e => {
   if (!e.target.closest('#ssBuyTop')) return;
