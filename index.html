@@ -679,7 +679,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-9';
+const APP_VERSION = '2026-11-21-15';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -1044,6 +1044,10 @@ function startGame(id) {
   if (id === 'zombie') { startZombie(); return; }
   if (id === 'word') { openWord(); return; }
   if (id === 'shoot') { startShoot(); return; }
+  if (id === 'brick') { startBrick(); return; }
+  if (id === 'flappy') { startFlappy(); return; }
+  if (id === 'memory') { startMemory(); return; }
+  if (id === 'mines') { startMines(); return; }
   $('wordBox').style.display = 'none'; gameCv.style.display = ''; startMusic(id);
   gr = { id, t: 0, last: performance.now(), px: 0, pointer: null, objs: [], spawn: 0, acc: 0, earned: 0, over: false, timer: 15, board: id === 'candy' ? newBoard() : null, sel: null, strikes: 0 };
   $('gameOv').classList.add('on'); $('loseBox').classList.remove('on');
@@ -1052,7 +1056,7 @@ function startGame(id) {
   sizeGame(); gr.px = gameCv.clientWidth / 2; setCoinsUI();
   requestAnimationFrame(tick);
 }
-function gameOver(msg) { gr.over = true; stopMusic(); sfx('lose'); if (gr.id === 'dodge') bestSet('dodgeBest', Math.floor(gr.t)); $('loseMsg').textContent = msg; $('loseBox').classList.add('on'); }
+function gameOver(msg) { gr.over = true; stopMusic(); sfx('lose'); if (gr.id === 'dodge') bestSet('dodgeBest', Math.floor(gr.t)); const once = gr && (gr.id === 'memory' || gr.id === 'mines'); if (once) msg += ' Come back tomorrow for another round.'; $('losePlay').style.display = once ? 'none' : ''; $('loseMsg').textContent = msg; $('loseBox').classList.add('on'); }
 function tick(now) {
   if (gr && gr.id === 'candy') { bestSet('candyMax', candyMult(gr)); checkAch(); }
   if (!gr) return;
@@ -1132,6 +1136,9 @@ gameCv.onpointerdown = e => {
   if (gr.id === 'duck' || gr.id === 'zombie') { gameTap(e); return; }
   if (gr.id === 'blast') { blastDown(e); return; }
   if (gr.id === 'candy') { candyDown(e); return; }
+  if (gr.id === 'memory') { memoryTap(e); return; }
+  if (gr.id === 'mines') { minesDown(e); return; }
+  if (gr.id === 'flappy') { flappyTap(); return; }
   if (gr.id === 'shoot') { gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; gr.downX = gr.pointer; gr.aim = Math.max(-1.35, Math.min(1.35, Math.atan((gr.pointer - gameCv.clientWidth / 2) / (gameCv.clientHeight * 0.35)))); return; }
   gr.pointer = e.clientX - gameCv.getBoundingClientRect().left;
 };
@@ -1504,6 +1511,11 @@ document.addEventListener('keydown', e => {
 $('wkb').onclick = e => { const b = e.target.closest('button[data-k]'); if (b) wkey(b.dataset.k); };
 // Music: synthesized live with Web Audio, no files needed. Each game has its own track.
 const TRACKS = {
+  mines: { bpm: 110, wave: 'triangle', root: 55, vol: 0.09, lead: [0, null, 3, null, 7, null, 3, null, 0, null, 5, null, 7, null, 10, null], bass: [-12, null, null, null, -12, null, null, null, -9, null, null, null, -7, null, null, null], drums: 'k...h...k...h...' },
+  shoot: { bpm: 132, wave: 'sawtooth', root: 52, vol: 0.07, lead: [0, null, 7, null, 12, null, 7, null, 3, null, 10, null, 7, null, 3, null], bass: [-12, null, -12, null, -12, null, -12, null, -9, null, -9, null, -7, null, -7, null], drums: 'k.s.k.s.k.s.k.ss' },
+  brick: { bpm: 138, wave: 'square', root: 62, vol: 0.07, lead: [0, 2, 4, 7, null, 7, 4, 2, 0, 2, 4, 9, 7, null, 4, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -7, null, null, null], drums: 'k.h.s.h.k.h.s.hk' },
+  flappy: { bpm: 124, wave: 'triangle', root: 67, vol: 0.1, lead: [0, null, 4, null, 7, 9, 7, null, 4, null, 2, 4, null, 7, null, null], bass: [-12, null, null, null, -5, null, null, null, -7, null, null, null, -5, null, null, null], drums: 'k.h.k.h.k.h.k.hh' },
+  memory: { bpm: 96, wave: 'sine', root: 64, vol: 0.1, lead: [0, null, 2, null, 4, null, 2, null, 0, null, -3, null, 0, null, null, null], bass: [-12, null, null, null, -12, null, null, null, -9, null, null, null, -12, null, null, null], drums: 'k...h...k...h...' },
   dodge: { bpm: 160, wave: 'sawtooth', root: 57, vol: 0.09, lead: [0, null, 3, 7, 12, null, 7, 3, 0, null, 3, 7, 10, null, 7, 3], bass: [0, null, null, 0, null, 0, null, -4, -2, null, null, -2, null, -4, null, -5], drums: 'khshkhshkhshkhsh' },
   bubble: { bpm: 118, wave: 'triangle', root: 60, vol: 0.12, lead: [0, null, 4, 7, null, 9, 7, 4, 0, null, 4, 7, 12, null, 9, null], bass: [0, null, null, null, -5, null, null, null, -3, null, null, null, -5, null, null, null], drums: 'k.h.k.h.k.h.k.h.' },
   candy: { bpm: 128, wave: 'sine', root: 60, vol: 0.13, lead: [0, 4, 7, 4, 0, 4, 9, 7, 5, 9, 12, 9, 7, 9, 4, null], bass: [-12, null, null, -12, -8, null, null, -8, -10, null, null, -10, -7, null, null, null], drums: 'h.h.h.h.h.h.h.h.' },
@@ -3122,7 +3134,7 @@ function startShoot() {
   $('gameOv').classList.add('on'); $('loseBox').classList.remove('on'); gameCv.style.display = ''; $('wordBox').style.display = 'none';
   $('gameTitle').textContent = 'Bubble Shooter';
   $('gameMsg').textContent = 'Drag to aim, tap to shoot. Do not let any bubble reach the ground.';
-  sizeGame(); startMusic('bubble');
+  sizeGame(); startMusic('shoot');
   requestAnimationFrame(shootTick);
 }
 function shootTick(now) {
@@ -3564,7 +3576,11 @@ const GAME_CARDS = {
   blast: { ico: '🟦', name: 'Block Blast', desc: 'Place blocks to clear rows and columns', cat: 'Puzzle' },
   shoot: { ico: '🔫', name: 'Bubble Shooter', desc: 'Aim, shoot, and keep bubbles off the ground', cat: 'Shooter' },
   duck: { ico: '🦆', name: 'Duck Hunt', desc: 'Tap the ducks before they fly away', cat: 'Shooter' },
-  zombie: { ico: '🧟', name: 'Zombie Survivor', desc: 'Shoot zombies closing in from every side', cat: 'Shooter' }
+  zombie: { ico: '🧟', name: 'Zombie Survivor', desc: 'Shoot zombies closing in from every side', cat: 'Shooter' },
+  brick: { ico: '🎾', name: 'Breakout', desc: 'Bounce the ball and break bricks for coins', cat: 'Arcade' },
+  flappy: { ico: '🐥', name: 'Flappy Pet', desc: 'Tap to fly through the gaps', cat: 'Arcade' },
+  memory: { ico: '🃏', name: 'Memory Match', desc: 'Find the matching pairs. Once a day', cat: 'Puzzle' },
+  mines: { ico: '💣', name: 'Minesweeper', desc: 'Open safe cells and avoid the mines. Once a day', cat: 'Puzzle' }
 };
 const GAME_CATS = ['Arcade', 'Puzzle', 'Shooter'];
 function renderGames() {
@@ -3608,6 +3624,7 @@ function blastDrop() {
 }
 gameCv.addEventListener('pointerup', () => { if (gr && gr.id === 'blast') blastDrop(); });
 gameCv.addEventListener('pointercancel', () => { if (gr && gr.id === 'blast') { gr.drag = null; } });
+gameCv.addEventListener('pointerup', () => { if (gr && gr.id === 'mines') minesUp(); });
 // Block Blast drop: tries the closest spot, then the spots right next to it, so small misses still place.
 function blastDrop() {
   const d = gr.drag;
@@ -3863,7 +3880,7 @@ function duckDraw(W, H) {
 }
 // Per-game stats: recorded each time a game ends, shown in the Stats tab, and used for achievements.
 const GAME_STAT_IDS = ['dodge', 'bubble', 'candy', 'tetris', 'blast', 'shoot', 'duck', 'zombie'];
-const GAME_STAT_NAMES = { dodge: 'Neon Dodge', bubble: 'Bubble Catcher', candy: 'Candy Match', tetris: 'Tetris', blast: 'Block Blast', shoot: 'Bubble Shooter', duck: 'Duck Hunt', zombie: 'Zombie Survivor' };
+const GAME_STAT_NAMES = { mines: 'Minesweeper', brick: 'Breakout', flappy: 'Flappy Pet', memory: 'Memory Match', dodge: 'Neon Dodge', bubble: 'Bubble Catcher', candy: 'Candy Match', tetris: 'Tetris', blast: 'Block Blast', shoot: 'Bubble Shooter', duck: 'Duck Hunt', zombie: 'Zombie Survivor' };
 function recordGameEnd() {
   if (!gr || !gr.id) return;
   state.gstats = state.gstats || {};
@@ -5854,6 +5871,278 @@ $('mbRolled').onclick = e => { const t = e.target.closest('.mb-tile'); if (t) { 
 $('mbActive').onclick = e => { if (e.target.closest('#mbUnlockBtn')) mbUnlock(); };
 
 $('toShopMb').onclick = () => showView('shop');
+
+// NEW GAMES: Breakout, Flappy Pet, Memory Match
+function startBrick() {
+  gr = { id: 'brick', t: 0, last: performance.now(), over: false, earned: 0, px: 0, pointer: null, pops: [], ball: null, bricks: [], stepT: 9 };
+  $('gameOv').classList.add('on'); $('loseBox').classList.remove('on'); gameCv.style.display = ''; $('wordBox').style.display = 'none';
+  $('gameTitle').textContent = 'Breakout';
+  $('gameMsg').textContent = 'One try. Break bricks for coins. Bricks keep coming down. Bomb bricks end the run.';
+  sizeGame(); startMusic('brick');
+  gr.px = gameCv.clientWidth / 2;
+  for (let i = 0; i < 3; i++) brickAddRow();
+  brickBall();
+  requestAnimationFrame(brickTick);
+}
+const BR_ROW = 24, BR_FLOOR_OFF = 90;
+function brickAddRow() {
+  for (const k of gr.bricks) k.y += BR_ROW;
+  const W = gameCv.clientWidth, cols = 7, bw = (W - 20) / cols;
+  const colors = ['#ff8a65', '#ffd23f', '#8bc34a', '#4fc3f7', '#ba68c8'];
+  for (let c = 0; c < cols; c++) {
+    if (Math.random() < 0.72) gr.bricks.push({ x: 10 + c * bw, y: 70, w: bw - 4, h: 18, col: colors[Math.floor(Math.random() * colors.length)], bomb: Math.random() < 0.12 });
+  }
+}
+function brickBall() {
+  const H = gameCv.clientHeight;
+  gr.ball = { x: gr.px, y: H - 70, vx: 140, vy: -230, r: 7 };
+}
+function brickTick(now) {
+  if (!gr || gr.id !== 'brick') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  if (!gr.over) {
+    gr.t += dt;
+    const padY = H - 60, padW = 90;
+    if (gr.pointer !== null) gr.px = gr.pointer;
+    gr.px = Math.max(padW / 2, Math.min(W - padW / 2, gr.px));
+    const b = gr.ball;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); }
+    if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); }
+    if (b.y < b.r) { b.y = b.r; b.vy = Math.abs(b.vy); }
+    if (b.vy > 0 && b.y + b.r >= padY && b.y + b.r <= padY + 14 && Math.abs(b.x - gr.px) <= padW / 2) {
+      b.y = padY - b.r; b.vy = -Math.abs(b.vy); b.vx = ((b.x - gr.px) / (padW / 2)) * 280;
+    }
+    if (b.y - b.r > H) gameOver(`The ball fell. You earned ${gr.earned} 🪙`);
+    for (const k of gr.bricks) {
+      if (gr.over) break;
+      if (b.x + b.r > k.x && b.x - b.r < k.x + k.w && b.y + b.r > k.y && b.y - b.r < k.y + k.h) {
+        if (k.bomb) { gameOver(`A bomb brick! You earned ${gr.earned} 🪙`); break; }
+        k.dead = true; b.vy = -b.vy; gr.earned += 2; addCoins(2);
+        gr.pops.push({ x: k.x + k.w / 2, y: k.y + k.h / 2, txt: '+2', col: '#ffd23f', life: 1 });
+        break;
+      }
+    }
+    gr.bricks = gr.bricks.filter(k => !k.dead);
+    gr.stepT -= dt;
+    if (gr.stepT <= 0) { brickAddRow(); gr.stepT = Math.max(4, 9 - gr.t * 0.03); }
+    if (!gr.over && gr.bricks.some(k => k.y + k.h >= H - BR_FLOOR_OFF)) gameOver(`The bricks reached the floor. You earned ${gr.earned} 🪙`);
+    gameFx(gr.pops, dt);
+  }
+  brickDraw(W, H);
+  if (!gr.over) requestAnimationFrame(brickTick);
+}
+function brickDraw(W, H) {
+  const bg = gx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#1a1030'); bg.addColorStop(1, '#2b1f4d');
+  gx.fillStyle = bg; gx.fillRect(0, 0, W, H);
+  const floorY = H - BR_FLOOR_OFF;
+  gx.strokeStyle = '#ff5252'; gx.setLineDash([6, 6]); gx.beginPath(); gx.moveTo(0, floorY); gx.lineTo(W, floorY); gx.stroke(); gx.setLineDash([]);
+  for (const k of gr.bricks) {
+    gx.fillStyle = k.bomb ? '#263238' : k.col; gx.fillRect(k.x, k.y, k.w, k.h);
+    if (k.bomb) { gx.textAlign = 'center'; gx.textBaseline = 'middle'; gx.font = '12px system-ui'; gx.fillText('💣', k.x + k.w / 2, k.y + k.h / 2); }
+  }
+  gx.fillStyle = '#ffe066'; gx.fillRect(gr.px - 45, H - 60, 90, 12);
+  gx.fillStyle = '#ffffff'; gx.beginPath(); gx.arc(gr.ball.x, gr.ball.y, gr.ball.r, 0, 7); gx.fill();
+  gameFxDraw(gr.pops);
+}
+
+function startFlappy() {
+  gr = { id: 'flappy', t: 0, last: performance.now(), over: false, earned: 0, y: 0, vy: 0, pipes: [], spawn: 0, pops: [] };
+  $('gameOv').classList.add('on'); $('loseBox').classList.remove('on'); gameCv.style.display = ''; $('wordBox').style.display = 'none';
+  $('gameTitle').textContent = 'Flappy Pet';
+  $('gameMsg').textContent = 'Tap to flap. Fly through the gaps. Each pipe pays 3 coins.';
+  sizeGame(); startMusic('flappy');
+  gr.y = gameCv.clientHeight / 2;
+  requestAnimationFrame(flappyTick);
+}
+function flappyTap() { if (gr && gr.id === 'flappy' && !gr.over) gr.vy = -330; }
+function flappyTick(now) {
+  if (!gr || gr.id !== 'flappy') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  if (!gr.over) {
+    gr.t += dt; gr.spawn -= dt;
+    const speed = Math.min(260, 150 + gr.t * 3), gap = 140, bx = 80, br = 14;
+    if (gr.spawn <= 0) { gr.spawn = 1.7; gr.pipes.push({ x: W + 20, gy: 90 + Math.random() * (H - 260), w: 48, passed: false }); }
+    gr.vy += 900 * dt; gr.y += gr.vy * dt;
+    if (gr.y - br < 0 || gr.y + br > H - 50) gameOver(`You crashed. You earned ${gr.earned} 🪙`);
+    for (const p of gr.pipes) {
+      p.x -= speed * dt;
+      if (!p.passed && p.x + p.w < bx) { p.passed = true; gr.earned += 3; addCoins(3); gr.pops.push({ x: bx + 30, y: gr.y - 20, txt: '+3', col: '#ffd23f', life: 1 }); }
+      if (bx + br > p.x && bx - br < p.x + p.w && (gr.y - br < p.gy || gr.y + br > p.gy + gap)) gameOver(`You hit a pipe. You earned ${gr.earned} 🪙`);
+    }
+    gr.pipes = gr.pipes.filter(p => p.x + p.w > -10);
+    gameFx(gr.pops, dt);
+  }
+  flappyDraw(W, H);
+  if (!gr.over) requestAnimationFrame(flappyTick);
+}
+function flappyDraw(W, H) {
+  const sky = gx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#7fd3ff'); sky.addColorStop(1, '#d6f1ff');
+  gx.fillStyle = sky; gx.fillRect(0, 0, W, H);
+  for (const p of gr.pipes) {
+    gx.fillStyle = '#4caf50';
+    gx.fillRect(p.x, 0, p.w, p.gy);
+    gx.fillRect(p.x, p.gy + 140, p.w, H - 50 - (p.gy + 140));
+  }
+  gx.fillStyle = '#8d6e63'; gx.fillRect(0, H - 50, W, 50);
+  gx.textAlign = 'center'; gx.textBaseline = 'middle'; gx.font = '30px system-ui';
+  gx.fillText('🐥', 80, gr.y);
+  gameFxDraw(gr.pops);
+}
+
+function startMemory() {
+  if (state.memDay === todayKey()) { toast('Memory Match is once a day. Come back tomorrow.'); return; }
+  state.memDay = todayKey(); save();
+  const syms = ['🐶', '🐱', '🐸', '🦊', '🐼', '🐵', '🐙', '🦄'];
+  gr = { id: 'memory', t: 0, last: performance.now(), over: false, earned: 0, pops: [], open: [], lock: false, checkT: 0, matched: 0, lay: null,
+    cards: [...syms, ...syms].sort(() => Math.random() - 0.5).map(s => ({ s, open: false, matched: false })) };
+  $('gameOv').classList.add('on'); $('loseBox').classList.remove('on'); gameCv.style.display = ''; $('wordBox').style.display = 'none';
+  $('gameTitle').textContent = 'Memory Match';
+  $('gameMsg').textContent = 'Tap two cards to find a matching pair. Each pair pays 5 coins. Clear all 8 for a 20 coin bonus.';
+  sizeGame(); startMusic('memory');
+  requestAnimationFrame(memoryTick);
+}
+function memoryLayout(W, H) { const cell = Math.min((W - 40) / 4, (H - 170) / 4); return { cell, ox: (W - cell * 4) / 2, oy: 110 }; }
+function memoryTap(e) {
+  if (!gr.lay || gr.lock) return;
+  const rect = gameCv.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const col = Math.floor((x - gr.lay.ox) / gr.lay.cell), row = Math.floor((y - gr.lay.oy) / gr.lay.cell);
+  if (col < 0 || col > 3 || row < 0 || row > 3) return;
+  const idx = row * 4 + col, c = gr.cards[idx];
+  if (c.open || c.matched) return;
+  c.open = true; gr.open.push(idx);
+  if (gr.open.length === 2) { gr.lock = true; gr.checkT = 0.8; }
+}
+function memoryTick(now) {
+  if (!gr || gr.id !== 'memory') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  gr.t += dt;
+  gr.lay = memoryLayout(W, H);
+  if (!gr.over && gr.lock) {
+    gr.checkT -= dt;
+    if (gr.checkT <= 0) {
+      const a = gr.cards[gr.open[0]], b = gr.cards[gr.open[1]];
+      if (a.s === b.s) {
+        a.matched = true; b.matched = true; gr.matched++; gr.earned += 5; addCoins(5);
+        gr.pops.push({ x: gr.lay.ox + gr.lay.cell * 2, y: gr.lay.oy - 14, txt: '+5', col: '#ffd23f', life: 1 });
+        if (gr.matched === 8) { gr.earned += 20; addCoins(20); gameOver(`Board cleared! You earned ${gr.earned} 🪙`); }
+      } else { a.open = false; b.open = false; }
+      gr.open = []; gr.lock = false;
+    }
+  }
+  gameFx(gr.pops, dt);
+  memoryDraw(W, H);
+  if (!gr.over) requestAnimationFrame(memoryTick);
+}
+function memoryDraw(W, H) {
+  gx.fillStyle = '#1d1538'; gx.fillRect(0, 0, W, H);
+  const L = gr.lay, size = L.cell - 8;
+  gr.cards.forEach((c, i) => {
+    const r = Math.floor(i / 4), col = i % 4, x = L.ox + col * L.cell + 4, y = L.oy + r * L.cell + 4;
+    gx.fillStyle = c.matched ? '#8bc34a' : c.open ? '#fff8e7' : '#4a3b7a';
+    gx.fillRect(x, y, size, size);
+    if (c.open || c.matched) {
+      gx.textAlign = 'center'; gx.textBaseline = 'middle'; gx.font = `${Math.floor(size * 0.6)}px system-ui`;
+      gx.fillText(c.s, x + size / 2, y + size / 2);
+    }
+  });
+  gameFxDraw(gr.pops);
+}
+
+// MINESWEEPER (once a day)
+function startMines() {
+  if (state.minesDay === todayKey()) { toast('Minesweeper is once a day. Come back tomorrow.'); return; }
+  state.minesDay = todayKey(); save();
+  const cells = [];
+  for (let i = 0; i < 81; i++) cells.push({ mine: false, adj: 0, open: false, flag: false });
+  gr = { id: 'mines', t: 0, last: performance.now(), over: false, earned: 0, pops: [], cells, placed: false, pressIdx: null, pressT: 0, lay: null };
+  $('gameOv').classList.add('on'); $('loseBox').classList.remove('on'); gameCv.style.display = ''; $('wordBox').style.display = 'none';
+  $('gameTitle').textContent = 'Minesweeper';
+  $('gameMsg').textContent = 'Tap to open a cell. Hold to place a flag. Each safe cell pays 1 coin. Clear the board for a 30 coin bonus.';
+  sizeGame(); startMusic('mines');
+  requestAnimationFrame(minesTick);
+}
+function minesLayout(W, H) { const cell = Math.min((W - 30) / 9, (H - 170) / 9); return { cell, ox: (W - cell * 9) / 2, oy: 110 }; }
+function minesIdx(e) {
+  if (!gr.lay) return -1;
+  const rect = gameCv.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const col = Math.floor((x - gr.lay.ox) / gr.lay.cell), row = Math.floor((y - gr.lay.oy) / gr.lay.cell);
+  if (col < 0 || col > 8 || row < 0 || row > 8) return -1;
+  return row * 9 + col;
+}
+function minesDown(e) { const i = minesIdx(e); if (i < 0) return; gr.pressIdx = i; gr.pressT = performance.now(); }
+function minesUp() {
+  if (gr.pressIdx === null) return;
+  const i = gr.pressIdx, held = performance.now() - gr.pressT;
+  gr.pressIdx = null;
+  if (gr.over) return;
+  if (held > 350) { const c = gr.cells[i]; if (!c.open) c.flag = !c.flag; }
+  else minesReveal(i);
+}
+function minesNeighbors(i) {
+  const r = Math.floor(i / 9), c = i % 9, out = [];
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    const rr = r + dr, cc = c + dc;
+    if ((dr === 0 && dc === 0) || rr < 0 || rr > 8 || cc < 0 || cc > 8) continue;
+    out.push(rr * 9 + cc);
+  }
+  return out;
+}
+function placeMines(first) {
+  const near = new Set([first, ...minesNeighbors(first)]);
+  let placed = 0;
+  while (placed < 10) {
+    const i = Math.floor(Math.random() * 81);
+    if (gr.cells[i].mine || near.has(i)) continue;
+    gr.cells[i].mine = true; placed++;
+  }
+  for (let i = 0; i < 81; i++) gr.cells[i].adj = minesNeighbors(i).filter(n => gr.cells[n].mine).length;
+  gr.placed = true;
+}
+function minesReveal(i) {
+  if (!gr.placed) placeMines(i);
+  const c = gr.cells[i];
+  if (c.open || c.flag) return;
+  if (c.mine) { c.open = true; gameOver(`A mine! You earned ${gr.earned} 🪙`); return; }
+  const stack = [i];
+  let n = 0;
+  while (stack.length) {
+    const k = stack.pop(), ck = gr.cells[k];
+    if (ck.open || ck.flag || ck.mine) continue;
+    ck.open = true; n++;
+    if (ck.adj === 0) for (const nb of minesNeighbors(k)) if (!gr.cells[nb].open) stack.push(nb);
+  }
+  if (n > 0) { gr.earned += n; addCoins(n); gr.pops.push({ x: gameCv.clientWidth / 2, y: 80, txt: `+${n}`, col: '#ffd23f', life: 1 }); }
+  if (!gr.over && gr.cells.every(x => x.mine || x.open)) { gr.earned += 30; addCoins(30); gameOver(`Board cleared! You earned ${gr.earned} 🪙`); }
+}
+function minesTick(now) {
+  if (!gr || gr.id !== 'mines') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  gr.t += dt;
+  gr.lay = minesLayout(W, H);
+  gameFx(gr.pops, dt);
+  minesDraw(W, H);
+  if (!gr.over) requestAnimationFrame(minesTick);
+}
+function minesDraw(W, H) {
+  gx.fillStyle = '#1a2332'; gx.fillRect(0, 0, W, H);
+  const L = gr.lay, colors = ['', '#1e88e5', '#43a047', '#e53935', '#8e24aa', '#6d4c41', '#00838f', '#212121', '#757575'];
+  gr.cells.forEach((c, i) => {
+    const r = Math.floor(i / 9), col = i % 9, x = L.ox + col * L.cell + 2, y = L.oy + r * L.cell + 2, s = L.cell - 4;
+    gx.fillStyle = c.open ? (c.mine ? '#c62828' : '#e8e4f0') : '#3b4a63';
+    gx.fillRect(x, y, s, s);
+    let txt = null, tc = '#000';
+    if (c.open && c.mine) txt = '💣';
+    else if (c.open && c.adj > 0) { txt = String(c.adj); tc = colors[c.adj]; }
+    else if (!c.open && c.flag) txt = '🚩';
+    if (txt) { gx.fillStyle = tc; gx.textAlign = 'center'; gx.textBaseline = 'middle'; gx.font = `bold ${Math.floor(s * 0.55)}px system-ui`; gx.fillText(txt, x + s / 2, y + s / 2); }
+  });
+  gameFxDraw(gr.pops);
+}
 </script>
 </body>
 </html>
