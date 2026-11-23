@@ -363,6 +363,8 @@ input { -webkit-user-select: text; user-select: text; }
   .pg-face img { width:64px; height:64px; }
   .pg-reveal { animation: pgUncover .5s forwards; }
   @keyframes pgUncover { 0% { transform:translateY(0) scale(1); } 40% { transform:translateY(-14px) scale(0.6); opacity:0.2; } 100% { transform:translateY(-6px) scale(1); opacity:1; } }
+  .pg-ov.pg-scroll { overflow-y:auto; -webkit-overflow-scrolling:touch; align-items:flex-start; }
+  .pg-wrap { margin:0 auto; padding-bottom:24px; }
 </style>
 </head>
 <body>
@@ -709,7 +711,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-42';
+const APP_VERSION = '2026-11-21-53';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -1077,6 +1079,11 @@ function startGame(id) {
   if (id === 'treat') { startTreat(); return; }
   if (id === 'pjump') { startPJump(); return; }
   if (id === 'bath') { startBath(); return; }
+  if (id === 'penalty') { startPenalty(); return; }
+  if (id === 'basket') { startBasket(); return; }
+  if (id === 'hockey') { startHockey(); return; }
+  if (id === 'bowl') { startBowl(); return; }
+  if (id === 'tt') { startTT(); return; }
   if (id === 'alien') { startAlien(); return; }
   $('wordBox').style.display = 'none'; gameCv.style.display = ''; startMusic(id);
   gr = { id, t: 0, last: performance.now(), px: 0, pointer: null, objs: [], spawn: 0, acc: 0, earned: 0, over: false, timer: 15, board: id === 'candy' ? newBoard() : null, sel: null, strikes: 0 };
@@ -1086,7 +1093,7 @@ function startGame(id) {
   sizeGame(); gr.px = gameCv.clientWidth / 2; setCoinsUI();
   requestAnimationFrame(tick);
 }
-function gameOver(msg) { gr.over = true; stopMusic(); sfx('lose'); if (gr.id === 'dodge') bestSet('dodgeBest', Math.floor(gr.t)); const once = gr && gr.id === 'memory'; if (once) msg += ' Come back tomorrow for another round.'; $('losePlay').style.display = once ? 'none' : ''; $('loseMsg').textContent = msg; $('loseBox').classList.add('on'); }
+function gameOver(msg) { gr.over = true; stopMusic(); sfx('lose'); if (gr.id === 'dodge') bestSet('dodgeBest', Math.floor(gr.t)); const once = gr && (gr.id === 'memory' || gr.id === 'penalty' || gr.id === 'basket' || gr.id === 'bowl'); if (once) msg += ' Come back tomorrow for another round.'; $('losePlay').style.display = once ? 'none' : ''; $('loseMsg').textContent = msg; $('loseBox').classList.add('on'); }
 function tick(now) {
   if (gr && gr.id === 'candy') { bestSet('candyMax', candyMult(gr)); checkAch(); }
   if (!gr) return;
@@ -1170,13 +1177,15 @@ gameCv.onpointerdown = e => {
   if (gr.id === 'mines') { minesDown(e); return; }
   if (gr.id === 'sniper') { sniperTap(e); return; }
   if (gr.id === 'pjump') { pjumpTap(); return; }
+  if (gr.id === 'tt') { gr.pointerX = sportPt(e).x; return; }
+  if (SPORT_IDS.includes(gr.id)) { sportDown(e); return; }
   if (gr.id === 'bath') { bathTap(e); return; }
   if (gr.id === 'alien') { gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; return; }
   if (gr.id === 'flappy') { flappyTap(); return; }
   if (gr.id === 'shoot') { gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; gr.downX = gr.pointer; gr.aim = Math.max(-1.35, Math.min(1.35, Math.atan((gr.pointer - gameCv.clientWidth / 2) / (gameCv.clientHeight * 0.35)))); return; }
   gr.pointer = e.clientX - gameCv.getBoundingClientRect().left;
 };
-gameCv.onpointermove = e => { if (gr && gr.id === 'blast') { blastMove(e); return; } if (gr && gr.id === 'candy') { candyMove(e); return; } if (gr && gr.pointer !== null) gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; };
+gameCv.onpointermove = e => { if (gr && gr.id === 'blast') { blastMove(e); return; } if (gr && gr.id === 'candy') { candyMove(e); return; } if (gr && gr.id === 'tt') { gr.pointerX = sportPt(e).x; return; } if (gr && SPORT_IDS.includes(gr.id)) { sportMove(e); return; } if (gr && gr.pointer !== null) gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; };
 const endPointer = () => { if (gr && gr.id === 'shoot' && gr.downX !== undefined) { gr.fire = true; gr.downX = undefined; } if (gr) { gr.pointer = null; gr.drag = null; } };
 gameCv.onpointerup = endPointer;
 gameCv.onpointercancel = endPointer;
@@ -1545,6 +1554,11 @@ document.addEventListener('keydown', e => {
 $('wkb').onclick = e => { const b = e.target.closest('button[data-k]'); if (b) wkey(b.dataset.k); };
 // Music: synthesized live with Web Audio, no files needed. Each game has its own track.
 const TRACKS = {
+  tt: { bpm: 124, wave: 'square', root: 60, vol: 0.07, lead: [0, null, 4, null, 7, null, 4, null, 0, null, 5, null, 7, null, 5, null], bass: [-12, null, null, null, -12, null, null, null, -9, null, null, null, -7, null, null, null], drums: 'k.h.k.h.k.h.s.h.' },
+  penalty: { bpm: 118, wave: 'square', root: 50, vol: 0.07, lead: [0, null, 4, null, 7, null, 4, null, 0, null, 5, null, 7, null, 9, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -8, null, null, null], drums: 'k.h.s.h.k.h.s.hk' },
+  basket: { bpm: 126, wave: 'triangle', root: 57, vol: 0.08, lead: [7, null, 9, null, 12, null, 9, null, 7, null, 5, null, 4, null, 5, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -9, null, null, null], drums: 'k.s.k.s.k.s.k.s.' },
+  hockey: { bpm: 142, wave: 'sawtooth', root: 62, vol: 0.06, lead: [0, 3, 7, 3, 10, 7, 3, 0, 0, 3, 7, 5, 10, null, 7, null], bass: [-12, null, null, null, -12, null, null, null, -7, null, null, null, -5, null, null, null], drums: 'k.h.k.h.k.hsk.h.' },
+  bowl: { bpm: 96, wave: 'sine', root: 48, vol: 0.09, lead: [0, null, 2, null, 4, null, null, null, 4, null, 2, null, 0, null, null, null], bass: [-12, null, null, null, -12, null, null, null, -12, null, null, null, -14, null, null, null], drums: 'k.......k.s.....' },
   treat: { bpm: 112, wave: 'triangle', root: 60, vol: 0.08, lead: [0, 2, 4, 2, 7, 4, 2, 0, 0, 2, 4, 5, 7, null, 4, null], bass: [-12, null, null, null, -12, null, null, null, -9, null, null, null, -7, null, null, null], drums: 'k.h.s.h.k.h.s.h.' },
   groom: { bpm: 90, wave: 'sine', root: 52, vol: 0.1, lead: [0, null, null, 4, null, null, 7, null, null, 4, null, null, 2, null, null, null], bass: [-12, null, null, null, null, null, null, null, -12, null, null, null, -10, null, null, null], drums: 'k.......k.......' },
   hide: { bpm: 104, wave: 'square', root: 55, vol: 0.07, lead: [0, null, 3, null, 5, null, 3, null, 0, null, -2, null, 0, null, null, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -12, null, null, null], drums: 'k.s.k..s.k.s.k.s' },
@@ -3627,13 +3641,18 @@ const GAME_CARDS = {
   mines: { ico: '💣', name: 'Minesweeper', desc: 'Open safe cells and avoid the mines. Once a day', cat: 'Puzzle' },
   alien: { ico: '👾', name: 'Alien Invasion', desc: 'Shoot down the alien waves before they land', cat: 'Shooter' },
   sniper: { ico: '🎯', name: 'Sniper Watch', desc: 'Tap to shoot targets before they vanish. 5 misses and you are out', cat: 'Shooter' },
+  penalty: { ico: '⚽', name: 'Penalty Kick', desc: 'Hold to aim, let go to kick. 5 kicks a day', cat: 'Sports' },
+  basket: { ico: '🏀', name: 'Basketball Shots', desc: 'Drag back and let go to shoot. 5 shots a day', cat: 'Sports' },
+  hockey: { ico: '🏒', name: 'Hockey Slide', desc: 'Score as many goals as you can in 20 seconds', cat: 'Sports' },
+  bowl: { ico: '🎳', name: 'Bowling', desc: 'Knock down pins in 2 tries per frame', cat: 'Sports' },
+  tt: { ico: '🏓', name: 'Table Tennis', desc: 'Drag to hit the ball back. Each return pays coins', cat: 'Sports' },
   treat: { ico: '🥣', name: 'Treat Catch', desc: 'Catch falling treats in your bowl. Pays Pet Points', cat: 'Pet Points' },
   groom: { ico: '🧽', name: 'Pet Groom', desc: 'Clean every dirt spot on your pet. Once a day', cat: 'Pet Points' },
   hide: { ico: '🌳', name: 'Hide and Seek', desc: 'Find your hidden pet in 3 tries. Once a day', cat: 'Pet Points' },
   pjump: { ico: '🐶', name: 'Puppy Jump', desc: 'Tap to jump over the rocks. Pays Pet Points', cat: 'Pet Points' },
   bath: { ico: '🛁', name: 'Bubble Bath', desc: 'Pop the bubbles before they float away. Pays Pet Points', cat: 'Pet Points' }
 };
-const GAME_CATS = ['Arcade', 'Puzzle', 'Shooter', 'Pet Points'];
+const GAME_CATS = ['Arcade', 'Puzzle', 'Shooter', 'Pet Points', 'Sports'];
 function renderGames() {
   $('gameList').innerHTML = GAME_CATS.map(cat => {
     const cards = Object.entries(GAME_CARDS).filter(([id, g]) => g.cat === cat).map(([id, g]) => `<div class='game'><div class='ico'>${g.ico}</div><div class='info'><b>${g.name}</b><span>${g.desc}</span></div><button class='play' data-game='${id}'>Play</button></div>`).join('');
@@ -3676,6 +3695,7 @@ function blastDrop() {
 gameCv.addEventListener('pointerup', () => { if (gr && gr.id === 'blast') blastDrop(); });
 gameCv.addEventListener('pointercancel', () => { if (gr && gr.id === 'blast') { gr.drag = null; } });
 gameCv.addEventListener('pointerup', e => { if (gr && gr.id === 'mines') minesUp(e); });
+gameCv.addEventListener('pointerup', () => { if (gr && SPORT_IDS.includes(gr.id)) sportUp(); });
 // Block Blast drop: tries the closest spot, then the spots right next to it, so small misses still place.
 function blastDrop() {
   const d = gr.drag;
@@ -3931,7 +3951,7 @@ function duckDraw(W, H) {
 }
 // Per-game stats: recorded each time a game ends, shown in the Stats tab, and used for achievements.
 const GAME_STAT_IDS = ['dodge', 'bubble', 'candy', 'tetris', 'blast', 'shoot', 'duck', 'zombie'];
-const GAME_STAT_NAMES = { treat: 'Treat Catch', groom: 'Pet Groom', hide: 'Hide and Seek', pjump: 'Puppy Jump', bath: 'Bubble Bath', sniper: 'Sniper Watch', alien: 'Alien Invasion', mines: 'Minesweeper', brick: 'Breakout', flappy: 'Flappy Pet', memory: 'Memory Match', dodge: 'Neon Dodge', bubble: 'Bubble Catcher', candy: 'Candy Match', tetris: 'Tetris', blast: 'Block Blast', shoot: 'Bubble Shooter', duck: 'Duck Hunt', zombie: 'Zombie Survivor' };
+const GAME_STAT_NAMES = { tt: 'Table Tennis', penalty: 'Penalty Kick', basket: 'Basketball Shots', hockey: 'Hockey Slide', bowl: 'Bowling', treat: 'Treat Catch', groom: 'Pet Groom', hide: 'Hide and Seek', pjump: 'Puppy Jump', bath: 'Bubble Bath', sniper: 'Sniper Watch', alien: 'Alien Invasion', mines: 'Minesweeper', brick: 'Breakout', flappy: 'Flappy Pet', memory: 'Memory Match', dodge: 'Neon Dodge', bubble: 'Bubble Catcher', candy: 'Candy Match', tetris: 'Tetris', blast: 'Block Blast', shoot: 'Bubble Shooter', duck: 'Duck Hunt', zombie: 'Zombie Survivor' };
 function recordGameEnd() {
   if (!gr || !gr.id) return;
   state.gstats = state.gstats || {};
@@ -4253,8 +4273,8 @@ function updateGamesCounter() {
     setCoinsUI();
   }
 }
-const CAT_ICO = { Arcade: '🕹️', Puzzle: '🧩', Shooter: '🎯', 'Pet Points': '🐾' };
-const CAT_SUB = { Arcade: 'Fast and endless games', Puzzle: 'Brain teasers and block games', Shooter: 'Aim and blast bubbles', 'Pet Points': 'Pet games that pay Pet Points' };
+const CAT_ICO = { Sports: '⚽', Arcade: '🕹️', Puzzle: '🧩', Shooter: '🎯', 'Pet Points': '🐾' };
+const CAT_SUB = { Sports: 'Kick, shoot and score', Arcade: 'Fast and endless games', Puzzle: 'Brain teasers and block games', Shooter: 'Aim and blast bubbles', 'Pet Points': 'Pet games that pay Pet Points' };
 renderGames = function () {
   const box = $('gameList');
   updateGamesCounter();
@@ -6405,11 +6425,12 @@ function sniperDraw(W, H) {
 function ppAdd(n) { state.petPoints = (state.petPoints || 0) + n; save(); syncGameCounter(); }
 function ppDayOk(k) { state.ppDay = state.ppDay || {}; return state.ppDay[k] !== todayKey(); }
 function ppDayMark(k) { state.ppDay = state.ppDay || {}; state.ppDay[k] = todayKey(); save(); }
-function ppOverlay(html) { const ov = $('ppOv'); ov.innerHTML = `<div class="pg-wrap">${html}</div>`; ov.classList.add('on'); }
+function ppOverlay(html) { const ov = $('ppOv'); ov.classList.remove('pg-scroll'); ov.innerHTML = `<div class="pg-wrap">${html}</div>`; ov.classList.add('on'); }
 function ppClose() { $('ppOv').classList.remove('on'); $('ppOv').onclick = null; stopMusic(); renderGames(); }
 function showPicker(title, dirty, onPick) {
   const owned = state.pets;
   ppOverlay(`<div class="bb-h">${title}</div><div class="pg-grid">${owned.map((p, i) => `<button class="pg-pick" data-i="${i}"><div class="face ${dirty ? 'pg-dirty' : ''}">${petHTML(p.idx, p.level)}</div><small>${PETS[p.idx].n}</small></button>`).join('')}</div><button class="btn-soft" id="pgBack">‹ Back</button>`);
+  $('ppOv').classList.add('pg-scroll');
   $('pgBack').onclick = ppClose;
   $('ppOv').onclick = e => { const b = e.target.closest('[data-i]'); if (b) onPick(owned[Number(b.dataset.i)]); };
 }
@@ -6655,6 +6676,346 @@ function renderSecretStreak(owned) {
   const idx = Math.min(s.sgIdx || 0, SEC_STREAK_GOALS.length - 1);
   const N = SEC_STREAK_GOALS[idx], cur = secStreak(), done = cur >= N;
   $('ssStreak').innerHTML = `<div class="ss-task ${done ? 'done' : ''}"><span class="ss-box">${done ? '✓' : ''}</span><span class="t">Complete all 3 habits for ${N} days in a row</span><span class="ss-prog">${Math.min(cur, N)}/${N}</span></div>`;
+}
+
+// SPORTS
+const SPORT_IDS = ['penalty', 'basket', 'hockey', 'bowl'];
+function sportDayOk(k) { return (state.sportDay || {})[k] !== todayKey(); }
+function sportMark(k) { state.sportDay = state.sportDay || {}; state.sportDay[k] = todayKey(); save(); }
+function sportPt(e) { const r = gameCv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+function sportsSetup(id, title, msg, music) {
+  gr = { id, t: 0, last: performance.now(), over: false, earned: 0, pops: [] };
+  $('gameOv').classList.add('on'); $('loseBox').classList.remove('on'); gameCv.style.display = ''; $('wordBox').style.display = 'none';
+  $('gameTitle').textContent = title; $('gameMsg').textContent = msg;
+  sizeGame(); startMusic(music);
+}
+function sportDown(e) {
+  const p = sportPt(e);
+  if (gr.id === 'penalty') { gr.holding = true; gr.aimX = p.x; }
+  else if (gr.id === 'basket' || gr.id === 'bowl') { if (!gr.rolling && !gr.moving) { gr.drag = true; gr.dragOn = true; gr.aimP = p; } }
+  else if (gr.id === 'hockey') { gr.pointerX = p.x; gr.pointerY = p.y; }
+}
+function sportMove(e) {
+  const p = sportPt(e);
+  if (gr.id === 'penalty' && gr.holding) gr.aimX = p.x;
+  else if ((gr.id === 'basket' || gr.id === 'bowl') && gr.drag) gr.aimP = p;
+  else if (gr.id === 'hockey') { gr.pointerX = p.x; gr.pointerY = p.y; }
+}
+function sportUp() {
+  if (gr.id === 'penalty' && gr.holding) { gr.holding = false; penaltyKick(); }
+  else if (gr.id === 'basket' && gr.dragOn) { gr.dragOn = false; gr.drag = false; basketShoot(); }
+  else if (gr.id === 'bowl' && gr.dragOn) { gr.dragOn = false; gr.drag = false; bowlRoll(); }
+}
+
+// Penalty Kick (5 kicks a day)
+function startPenalty() {
+  if (!sportDayOk('pen')) { toast('Penalty Kick is once a day. Come back tomorrow.'); return; }
+  sportsSetup('penalty', 'Penalty Kick', 'Hold and drag to aim, let go to kick. The keeper will try to save it. 5 kicks a day.', 'penalty');
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  sportMark('pen');
+  Object.assign(gr, { kicksLeft: 5, holding: false, aimX: W / 2, shot: null, keeper: { x: W / 2, dir: 1 }, ball: { x: W / 2, y: H - 110 } });
+  requestAnimationFrame(penaltyTick);
+}
+function penaltyGoal() { const W = gameCv.clientWidth; return { x: (W - W * 0.7) / 2, w: W * 0.7, y: 110, h: 120 }; }
+function penaltyKick() {
+  if (gr.shot || gr.kicksLeft <= 0 || gr.over) return;
+  const G = penaltyGoal();
+  const tx = Math.max(G.x + 12, Math.min(G.x + G.w - 12, gr.aimX));
+  gr.shot = { sx: gr.ball.x, sy: gr.ball.y, tx, ty: G.y + 60, t: 0, dur: 0.7, result: null, doneT: 0.9 };
+  gr.kicksLeft--;
+}
+function penaltyTick(now) {
+  if (!gr || gr.id !== 'penalty') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight, G = penaltyGoal();
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  if (!gr.over) {
+    if (!gr.shot) {
+      gr.keeper.x += gr.keeper.dir * 220 * dt;
+      if (gr.keeper.x < G.x + 20) { gr.keeper.x = G.x + 20; gr.keeper.dir = 1; }
+      if (gr.keeper.x > G.x + G.w - 20) { gr.keeper.x = G.x + G.w - 20; gr.keeper.dir = -1; }
+    }
+    const s = gr.shot;
+    if (s) {
+      if (!s.result) {
+        s.t += dt;
+        const u = Math.min(1, s.t / s.dur);
+        gr.ball.x = s.sx + (s.tx - s.sx) * u;
+        gr.ball.y = s.sy + (s.ty - s.sy) * u - Math.sin(u * Math.PI) * 40;
+        if (s.t > 0.2) {
+          gr.keeper.x += Math.max(-300 * dt, Math.min(300 * dt, s.tx - gr.keeper.x));
+        } else {
+          gr.keeper.x += gr.keeper.dir * 220 * dt;
+          gr.keeper.x = Math.max(G.x + 20, Math.min(G.x + G.w - 20, gr.keeper.x));
+        }
+        if (u >= 1) {
+          const saved = Math.abs(gr.keeper.x - s.tx) < 30;
+          s.result = saved ? 'SAVED' : 'GOAL';
+          if (!saved) { gr.earned += 10; addCoins(10); }
+          gr.pops.push({ x: s.tx, y: G.y + 40, txt: saved ? 'SAVED' : '+10 GOAL', col: saved ? '#ff5252' : '#ffd23f', life: 1 });
+        }
+      } else {
+        s.doneT -= dt;
+        if (s.doneT <= 0) {
+          gr.shot = null; gr.ball = { x: W / 2, y: H - 110 };
+          if (gr.kicksLeft <= 0) gameOver(`Kicks done. You earned ${gr.earned} 🪙`);
+        }
+      }
+    }
+    gameFx(gr.pops, dt);
+  }
+  const bg = gx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2e7d32'); bg.addColorStop(1, '#43a047');
+  gx.fillStyle = bg; gx.fillRect(0, 0, W, H);
+  gx.strokeStyle = '#ffffff'; gx.lineWidth = 4; gx.strokeRect(G.x, G.y, G.w, G.h); gx.lineWidth = 1;
+  gx.fillStyle = 'rgba(255,255,255,0.15)';
+  for (let x = G.x; x < G.x + G.w; x += 14) gx.fillRect(x, G.y, 1, G.h);
+  gx.fillStyle = '#000000'; gx.textAlign = 'center'; gx.textBaseline = 'middle';
+  gx.font = '34px system-ui'; gx.fillText('🧤', gr.keeper.x, G.y + 60);
+  if (gr.holding) {
+    gx.strokeStyle = 'rgba(255,255,255,0.7)'; gx.setLineDash([6, 6]); gx.beginPath(); gx.moveTo(gr.ball.x, gr.ball.y); gx.lineTo(gr.aimX, G.y + 60); gx.stroke(); gx.setLineDash([]);
+  }
+  gx.font = '28px system-ui'; gx.fillText('⚽', gr.ball.x, gr.ball.y);
+  gx.fillStyle = '#ffffff'; gx.font = '14px system-ui'; gx.textAlign = 'left'; gx.textBaseline = 'alphabetic';
+  gx.fillText(`Kicks left: ${gr.kicksLeft}`, 10, 18);
+  gameFxDraw(gr.pops);
+  if (!gr.over) requestAnimationFrame(penaltyTick);
+}
+
+// Basketball (5 shots a day)
+function startBasket() {
+  if (!sportDayOk('bb')) { toast('Basketball Shots is once a day. Come back tomorrow.'); return; }
+  sportsSetup('basket', 'Basketball Shots', 'Drag back from the ball and let go to shoot. Each basket pays 10 coins. 5 shots a day.', 'basket');
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  sportMark('bb');
+  Object.assign(gr, { shotsLeft: 5, drag: false, aimP: null, moving: false, vx: 0, vy: 0, hoopX: W / 2, hoopY: 170, prevY: 0 });
+  gr.bx = W / 2; gr.by = H - 90;
+  gr.hoopX = 60 + Math.random() * (W - 120); gr.hoopY = H * 0.35;
+  requestAnimationFrame(basketTick);
+}
+function basketShoot() {
+  if (gr.moving || gr.shotsLeft <= 0 || !gr.aimP) return;
+  const dx = gr.aimP.x - gr.bx, dy = gr.aimP.y - gr.by;
+  if (Math.hypot(dx, dy) < 25) return;
+  let vx = dx * 3.2, vy = dy * 3.2;
+  const m = Math.hypot(vx, vy); if (m > 640) { vx *= 640 / m; vy *= 640 / m; }
+  gr.vx = vx; gr.vy = vy; gr.moving = true; gr.prevY = gr.by;
+  gr.shotsLeft--;
+}
+function basketTick(now) {
+  if (!gr || gr.id !== 'basket') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  if (!gr.over && gr.moving) {
+    gr.vy += 380 * dt; gr.bx += gr.vx * dt; gr.by += gr.vy * dt;
+    if (gr.prevY < gr.hoopY && gr.by >= gr.hoopY && Math.abs(gr.bx - gr.hoopX) < 28) {
+      gr.earned += 10; addCoins(10);
+      gr.pops.push({ x: gr.hoopX, y: gr.hoopY - 30, txt: '+10', col: '#ffd23f', life: 1 });
+      gr.hoopX = 60 + Math.random() * (W - 120);
+      endBasketShot(H, W);
+    } else if (gr.by > H + 20 || gr.bx < -20 || gr.bx > W + 20) {
+      gr.pops.push({ x: W / 2, y: 110, txt: 'MISS', col: '#ff5252', life: 0.8 });
+      endBasketShot(H, W);
+    }
+    gr.prevY = gr.by;
+    gameFx(gr.pops, dt);
+  }
+  gx.fillStyle = '#2a2140'; gx.fillRect(0, 0, W, H);
+  gx.fillStyle = '#ffffff'; gx.fillRect(gr.hoopX - 36, gr.hoopY - 60, 72, 46);
+  gx.fillStyle = '#ff7043'; gx.fillRect(gr.hoopX - 30, gr.hoopY, 60, 4);
+  if (gr.drag && gr.aimP) {
+    gx.strokeStyle = 'rgba(255,255,255,0.6)'; gx.setLineDash([6, 6]); gx.beginPath(); gx.moveTo(gr.bx, gr.by); gx.lineTo(gr.aimP.x, gr.aimP.y); gx.stroke(); gx.setLineDash([]);
+  }
+  gx.fillStyle = '#000000'; gx.textAlign = 'center'; gx.textBaseline = 'middle'; gx.font = '28px system-ui';
+  gx.fillText('🏀', gr.bx, gr.by);
+  gx.fillStyle = '#ffffff'; gx.font = '14px system-ui'; gx.textAlign = 'left'; gx.textBaseline = 'alphabetic';
+  gx.fillText(`Shots left: ${gr.shotsLeft}`, 10, 18);
+  gameFxDraw(gr.pops);
+  if (!gr.over) requestAnimationFrame(basketTick);
+}
+function endBasketShot(H, W) {
+  gr.moving = false; gr.bx = W / 2; gr.by = H - 90; gr.aimP = null;
+  if (gr.shotsLeft <= 0) gameOver(`Shots done. You earned ${gr.earned} 🪙`);
+}
+
+// Hockey Slide (20 seconds)
+function startHockey() {
+  sportsSetup('hockey', 'Hockey Slide', 'Drag the stick to hit the puck into the goal. Score as many as you can in 20 seconds.', 'hockey');
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  Object.assign(gr, { timeLeft: 20, goals: 0, puck: { x: W / 2, y: H * 0.55, vx: 0, vy: 0 }, stickX: W / 2, stickY: H - 120, pSX: W / 2, pSY: H - 120, stickVx: 0, stickVy: 0, pointerX: null, pointerY: null });
+  requestAnimationFrame(hockeyTick);
+}
+function hockeyTick(now) {
+  if (!gr || gr.id !== 'hockey') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  const goalW = 110, goalL = (W - goalW) / 2;
+  if (!gr.over) {
+    gr.timeLeft -= dt;
+    if (gr.timeLeft <= 0) { gr.timeLeft = 0; gameOver(`Time's up! ${gr.goals} goals. You earned ${gr.earned} 🪙`); }
+    if (gr.pointerX !== null) {
+      gr.pSX += (gr.pointerX - gr.pSX) * Math.min(1, dt * 16);
+      gr.pSY += (gr.pointerY - gr.pSY) * Math.min(1, dt * 16);
+    }
+    const prevX = gr.stickX, prevY = gr.stickY;
+    gr.stickX = Math.max(20, Math.min(W - 20, gr.pSX));
+    gr.stickY = Math.max(H * 0.15, Math.min(H - 40, gr.pSY));
+    gr.stickVx = (gr.stickX - prevX) / Math.max(dt, 0.001);
+    gr.stickVy = (gr.stickY - prevY) / Math.max(dt, 0.001);
+    const p = gr.puck;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    const f = Math.pow(0.6, dt); p.vx *= f; p.vy *= f;
+    if (p.x < 12) { p.x = 12; p.vx = Math.abs(p.vx); }
+    if (p.x > W - 12) { p.x = W - 12; p.vx = -Math.abs(p.vx); }
+    if (p.y < 14) {
+      if (p.x > goalL && p.x < goalL + goalW) {
+        gr.goals++; gr.earned += 5; addCoins(5);
+        gr.pops.push({ x: p.x, y: 60, txt: '+5 GOAL', col: '#ffd23f', life: 1 });
+        gr.puck = { x: W / 2, y: H * 0.55, vx: 0, vy: 0 };
+      } else { p.y = 14; p.vy = Math.abs(p.vy); }
+    }
+    if (p.y > H - 14) gr.puck = { x: W / 2, y: H * 0.55, vx: 0, vy: 0 };
+    const dx = p.x - gr.stickX, dy = p.y - gr.stickY, d = Math.hypot(dx, dy);
+    if (d < 26 && d > 0) {
+      const nx = dx / d, ny = dy / d;
+      p.vx = nx * 300 + gr.stickVx * 0.7;
+      p.vy = ny * 300 + gr.stickVy * 0.7;
+      p.x = gr.stickX + nx * 28; p.y = gr.stickY + ny * 28;
+    }
+    gameFx(gr.pops, dt);
+  }
+  const bg = gx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#dff4ff'); bg.addColorStop(1, '#b3e5fc');
+  gx.fillStyle = bg; gx.fillRect(0, 0, W, H);
+  gx.fillStyle = '#e53935'; gx.fillRect(goalL, 0, goalW, 6);
+  gx.strokeStyle = '#78909c'; gx.strokeRect(goalL, 0, goalW, 30);
+  gx.fillStyle = '#6d4c41'; gx.fillRect(gr.stickX - 14, gr.stickY - 3, 28, 6);
+  gx.fillStyle = '#111111'; gx.beginPath(); gx.arc(gr.puck.x, gr.puck.y, 9, 0, 7); gx.fill();
+  gx.fillStyle = '#000000'; gx.font = '14px system-ui'; gx.textAlign = 'left'; gx.textBaseline = 'alphabetic';
+  gx.fillText(`Time: ${Math.ceil(gr.timeLeft)}`, 10, 18); gx.fillText(`Goals: ${gr.goals}`, 10, 36);
+  gameFxDraw(gr.pops);
+  if (!gr.over) requestAnimationFrame(hockeyTick);
+}
+
+// Bowling (5 frames, 2 tries each)
+function makePins(W) {
+  const pins = [];
+  for (let i = 0; i < 4; i++) for (let j = 0; j <= i; j++) pins.push({ x: W / 2 + (j - i / 2) * 26, y: 130 + i * 24, down: false });
+  return pins;
+}
+function startBowl() {
+  if (!sportDayOk('bowl')) { toast('Bowling is once a day. Come back tomorrow.'); return; }
+  sportMark('bowl');
+  sportsSetup('bowl', 'Bowling', 'Drag back from the ball and let go to roll. 2 tries per frame, 5 frames. Each pin pays 5 coins, a strike pays 20 bonus.', 'bowl');
+  const W = gameCv.clientWidth;
+  Object.assign(gr, { frame: 1, try: 1, pins: makePins(W), ball: null, rolling: false, drag: false, aimP: null, knocked: 0 });
+  requestAnimationFrame(bowlTick);
+}
+function bowlRoll() {
+  if (gr.rolling || !gr.aimP) return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  let vx = (gr.aimP.x - W / 2) * 1.6; vx = Math.max(-260, Math.min(260, vx));
+  gr.ball = { x: W / 2, y: H - 80, vx, vy: -560 };
+  gr.rolling = true; gr.knocked = 0;
+}
+function bowlTick(now) {
+  if (!gr || gr.id !== 'bowl') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  if (!gr.over && gr.rolling) {
+    const b = gr.ball;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    for (const p of gr.pins) {
+      if (!p.down && Math.hypot(p.x - b.x, p.y - b.y) < 18) {
+        p.down = true; gr.knocked++;
+        gr.pops.push({ x: p.x, y: p.y - 14, txt: '+5', col: '#ffd23f', life: 0.7 });
+      }
+    }
+    if (b.y < 90 || b.x < 0 || b.x > W) {
+      gr.rolling = false;
+      const k = gr.knocked, bonus = (gr.try === 1 && gr.pins.every(p => p.down)) ? 20 : 0;
+      const pay = k * 5 + bonus;
+      if (pay > 0) { gr.earned += pay; addCoins(pay); }
+      if (bonus) gr.pops.push({ x: W / 2, y: 100, txt: 'STRIKE +20', col: '#ffe066', life: 1.2 });
+      const frameOver = bonus || gr.try === 2;
+      if (frameOver) {
+        gr.frame++; gr.try = 1; gr.pins = makePins(W);
+        if (gr.frame > 5) gameOver(`Bowling done. You earned ${gr.earned} 🪙`);
+      } else {
+        gr.try = 2;
+        gr.pins = gr.pins.filter(p => !p.down).length ? gr.pins : makePins(W);
+      }
+      gr.aimP = null; gr.ball = null;
+    }
+    gameFx(gr.pops, dt);
+  }
+  gx.fillStyle = '#5d4037'; gx.fillRect(0, 0, W, H);
+  gx.fillStyle = '#d7b98a'; gx.fillRect(W / 2 - 60, 80, 120, H - 80);
+  for (const p of gr.pins) if (!p.down) { gx.fillStyle = '#ffffff'; gx.beginPath(); gx.arc(p.x, p.y, 8, 0, 7); gx.fill(); gx.fillStyle = '#e53935'; gx.beginPath(); gx.arc(p.x, p.y - 2, 3, 0, 7); gx.fill(); }
+  if (gr.drag && gr.aimP) {
+    gx.strokeStyle = 'rgba(255,255,255,0.6)'; gx.setLineDash([6, 6]); gx.beginPath(); gx.moveTo(W / 2, H - 80); gx.lineTo(gr.aimP.x, gr.aimP.y); gx.stroke(); gx.setLineDash([]);
+  }
+  if (gr.ball) { gx.fillStyle = '#1e1e3f'; gx.beginPath(); gx.arc(gr.ball.x, gr.ball.y, 11, 0, 7); gx.fill(); }
+  else { gx.fillStyle = '#1e1e3f'; gx.beginPath(); gx.arc(W / 2, H - 80, 11, 0, 7); gx.fill(); }
+  gx.fillStyle = '#ffffff'; gx.font = '14px system-ui'; gx.textAlign = 'left'; gx.textBaseline = 'alphabetic';
+  gx.fillText(`Frame ${gr.frame}/5 · Try ${gr.try}/2`, 10, 18);
+  gameFxDraw(gr.pops);
+  if (!gr.over) requestAnimationFrame(bowlTick);
+}
+
+// TABLE TENNIS (endless rally, 3 misses ends it)
+function startTT() {
+  sportsSetup('tt', 'Table Tennis', 'Drag your paddle to hit the ball back. Each return pays 2 coins. Get past the computer for 10 coins. 3 misses ends the rally.', 'tt');
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  Object.assign(gr, { rally: 0, lives: 3, pX: W / 2, cX: W / 2, pointerX: null, bx: W / 2, by: H / 2, vx: (Math.random() < 0.5 ? -1 : 1) * 150, vy: 260 });
+  requestAnimationFrame(ttTick);
+}
+function ttSpeed() { return Math.min(560, 260 + gr.rally * 10); }
+function ttTick(now) {
+  if (!gr || gr.id !== 'tt') return;
+  const W = gameCv.clientWidth, H = gameCv.clientHeight;
+  const dt = Math.min(0.05, (now - gr.last) / 1000); gr.last = now;
+  const pY = H - 120, cY = 110, PW = 90;
+  if (!gr.over) {
+    if (gr.pointerX !== null) gr.pX += (gr.pointerX - gr.pX) * Math.min(1, dt * 14);
+    gr.pX = Math.max(PW / 2, Math.min(W - PW / 2, gr.pX));
+    gr.pVx = (gr.pX - (gr.pPrev !== undefined ? gr.pPrev : gr.pX)) / Math.max(dt, 0.001); gr.pPrev = gr.pX;
+    const cSpeed = 230;
+    gr.cX += Math.max(-cSpeed * dt, Math.min(cSpeed * dt, gr.bx - gr.cX));
+    gr.cX = Math.max(PW / 2, Math.min(W - PW / 2, gr.cX));
+    gr.bx += gr.vx * dt; gr.by += gr.vy * dt;
+    if (gr.bx < 8) { gr.bx = 8; gr.vx = Math.abs(gr.vx); }
+    if (gr.bx > W - 8) { gr.bx = W - 8; gr.vx = -Math.abs(gr.vx); }
+    if (gr.vy > 0 && gr.by >= pY - 10 && gr.by <= pY + 14 && Math.abs(gr.bx - gr.pX) <= PW / 2 + 8) {
+      gr.rally++; gr.earned += 2; addCoins(2);
+      gr.by = pY - 10; gr.vy = -ttSpeed();
+      const side = Math.max(-1, Math.min(1, (gr.bx - gr.pX) / (PW / 2)));
+      gr.vx = Math.max(-520, Math.min(520, side * 400 + gr.pVx * 0.3));
+      gr.pops.push({ x: gr.bx, y: pY - 30, txt: '+2', col: '#ffd23f', life: 0.7 });
+    }
+    if (gr.vy < 0 && gr.by <= cY + 14 && gr.by >= cY - 14 && Math.abs(gr.bx - gr.cX) <= PW / 2 + 8) {
+      gr.by = cY + 14; gr.vy = ttSpeed();
+      gr.vx = ((gr.bx - gr.cX) / (PW / 2)) * 220;
+    }
+    if (gr.by < -20) {
+      gr.earned += 10; addCoins(10);
+      gr.pops.push({ x: W / 2, y: 90, txt: 'POINT +10', col: '#ffd23f', life: 1 });
+      gr.bx = W / 2; gr.by = H / 2; gr.vx = (Math.random() < 0.5 ? -1 : 1) * 150; gr.vy = ttSpeed();
+    }
+    if (gr.by > H + 20) {
+      gr.lives--;
+      gr.pops.push({ x: W / 2, y: H - 160, txt: 'MISS', col: '#ff5252', life: 1 });
+      if (gr.lives <= 0) gameOver(`Rally over. You earned ${gr.earned} 🪙`);
+      else { gr.bx = W / 2; gr.by = H / 2; gr.vx = (Math.random() < 0.5 ? -1 : 1) * 150; gr.vy = -ttSpeed(); }
+    }
+    gameFx(gr.pops, dt);
+  }
+  gx.fillStyle = '#1b5e20'; gx.fillRect(0, 0, W, H);
+  gx.strokeStyle = 'rgba(255,255,255,0.6)'; gx.setLineDash([8, 8]); gx.beginPath(); gx.moveTo(0, H / 2); gx.lineTo(W, H / 2); gx.stroke(); gx.setLineDash([]);
+  gx.fillStyle = '#42a5f5'; gx.fillRect(gr.cX - PW / 2, cY - 5, PW, 10);
+  gx.fillStyle = '#ff7043'; gx.fillRect(gr.pX - PW / 2, pY - 5, PW, 10);
+  gx.fillStyle = '#ffffff'; gx.beginPath(); gx.arc(gr.bx, gr.by, 8, 0, 7); gx.fill();
+  gx.fillStyle = '#ffffff'; gx.font = '14px system-ui'; gx.textAlign = 'left'; gx.textBaseline = 'alphabetic';
+  gx.fillText(`Rally: ${gr.rally}`, 10, 18); gx.fillText(`Misses left: ${gr.lives}`, 10, 36);
+  gameFxDraw(gr.pops);
+  if (!gr.over) requestAnimationFrame(ttTick);
 }
 </script>
 </body>
