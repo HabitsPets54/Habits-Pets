@@ -745,7 +745,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-57';
+const APP_VERSION = '2026-11-21-58';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -7333,6 +7333,7 @@ $('speedLeave').onclick = () => {
 $('speedQueueCard').onclick = () => joinSpeed();
 $('speedmenuBack').onclick = () => showView('boss');
 $('speedboardBack').onclick = () => showView('speedmenu');
+$('view-speedmenu').onclick = e => { const b = e.target.closest('[data-go]'); if (b) showView(b.dataset.go); };
 async function loadSpeedLeaderboard() {
   if (!SB) { $('speedLbBox').textContent = 'Sign in to see the leaderboard.'; return; }
   const { data, error } = await SB.from('speed_leaderboard').select('id, username, wins, losses').order('wins', { ascending: false }).limit(20);
