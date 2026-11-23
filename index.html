@@ -365,6 +365,16 @@ input { -webkit-user-select: text; user-select: text; }
   @keyframes pgUncover { 0% { transform:translateY(0) scale(1); } 40% { transform:translateY(-14px) scale(0.6); opacity:0.2; } 100% { transform:translateY(-6px) scale(1); opacity:1; } }
   .pg-ov.pg-scroll { overflow-y:auto; -webkit-overflow-scrolling:touch; align-items:flex-start; }
   .pg-wrap { margin:0 auto; padding-bottom:24px; }
+  .pvp-ov { position:fixed; inset:0; background:#120c1c; display:none; flex-direction:column; padding:56px 12px 16px; z-index:32; }
+  .pvp-ov.on { display:flex; }
+  #pvCv { width:100%; height:52vh; border-radius:16px; display:block; }
+  .pvp-bar { display:flex; gap:6px; justify-content:center; margin-top:12px; }
+  .pvp-bar button { flex:1 1 0; min-width:0; padding:14px 0; font-size:18px; border-radius:14px; border:1px solid var(--line); background:var(--card); color:var(--text); touch-action:none; }
+  .pvp-roll { font-size:110px; line-height:1; margin:16px 0; }
+  .pvp-res { text-align:center; margin-top:14px; }
+  .pvp-res b { display:block; font-size:24px; margin-bottom:10px; }
+  #pvOv .pad { padding: 6px 4px; justify-content: space-between; }
+  #pvOv .ab { gap: 8px; }
 </style>
 </head>
 <body>
@@ -445,6 +455,8 @@ input { -webkit-user-select: text; user-select: text; }
     <p class='foot'>Win: +200 🪙 · Lose: -50 🪙 · Need 50 🪙 to fight</p>
     <button class="shopCard" data-go="duels" style="margin-top:28px"><div class="sc-ico">⚔️</div><div><b>Duels</b><div class="sub">Live 1v1. Pick a pet and find a player</div></div></button>
     <button class="shopCard" data-go="tugmenu"><div class="sc-ico">🪢</div><div><b>Tug-of-War</b><div class="sub">Tap fastest and pull the rope</div></div></button>
+    <button class="shopCard" data-go="speedmenu"><div class="sc-ico">🎯</div><div><b>Speed Tap</b><div class="sub">Tap the targets faster than your opponent</div></div></button>
+    <button class="shopCard" data-go="pvpet"><div class="sc-ico">🐉</div><div><b>Pet vs Pet</b><div class="sub">Fight a random pet. First battle each day pays</div></div></button>
   </section>
   <section class="view" id="view-shop">
     <div class="top"><h1>Shop</h1><div class="coins">🪙 <b id="coins6">0</b></div></div>
@@ -595,6 +607,28 @@ input { -webkit-user-select: text; user-select: text; }
     <div class="bb-sec"><div class="bb-h">Daily tasks</div><div id="ssStreak"></div><div id="ssTasks"></div><button class="bfight" id="ssClaim" style="width:100%;margin-top:12px" disabled>Claim</button></div>
   </section>
   <div class="bb-ov" id="ssOv"></div>
+  <section class="view" id="view-pvpet">
+    <div class="top"><button class="btn-soft" id="pvpetBack" style="min-width:96px">‹ PvP</button><h1 style="flex:1;text-align:right;white-space:nowrap;font-size:22px;margin:0 0 0 12px">Pet vs Pet</h1></div>
+    <div class="bb-sec"><div class="bb-h">Your first battle each day</div><div class="bb-muted">Win +200 coins. Lose -50. Later battles that day are practice with no coins.</div></div>
+    <button class="bfight" id="pvpetGo" style="width:100%">Choose a pet to fight</button>
+  </section>
+  <div class="pvp-ov" id="pvOv"></div>
+  <section class="view" id="view-speedmenu">
+    <div class="top"><button class="btn-soft" id="speedmenuBack" style="min-width:96px">‹ PvP</button><h1 style="flex:1;text-align:right;white-space:nowrap;font-size:22px;margin:0 0 0 12px">Speed Tap</h1></div>
+    <button class="shopCard" id="speedQueueCard"><div class="sc-ico">🎯</div><div><b>Queue</b><div class="sub">Find a player and start tapping</div></div></button>
+    <button class="shopCard" data-go="speedboard"><div class="sc-ico">🏆</div><div><b>Leaderboard</b><div class="sub">Most wins in Speed Tap</div></div></button>
+  </section>
+  <section class="view" id="view-speedboard">
+    <div class="top"><button class="btn-soft" id="speedboardBack" style="min-width:96px">‹ Speed Tap</button><h1 style="flex:1;text-align:right;white-space:nowrap;font-size:22px;margin:0 0 0 12px">Leaderboard</h1></div>
+    <div id="speedLbBox" class="foot" style="margin-top:10px"></div>
+  </section>
+  <section class="view" id="view-speed">
+    <div class="top"><button class="btn-soft" id="speedLeave" style="min-width:96px">‹ Speed Tap</button><h1 style="flex:1;text-align:right;white-space:nowrap;font-size:22px;margin:0 0 0 12px">Speed Tap</h1></div>
+    <div id="speedNames" class="foot" style="text-align:center;font-weight:700;margin-top:10px"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-weight:800;font-size:17px"><span id="speedMe">You 0</span><span id="speedTimer" style="font-size:22px">20s</span><span id="speedOpp">0 Them</span></div>
+    <div id="speedField" style="position:relative;height:55vh;margin-top:12px;border-radius:16px;background:#1b2a4a;overflow:hidden;touch-action:manipulation"></div>
+  </section>
+  
   <section class="view" id="view-profile">
     <div class="top"><h1>Profile</h1></div>
     <section class="card" style="text-align:center">
@@ -711,7 +745,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-53';
+const APP_VERSION = '2026-11-21-57';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -1554,6 +1588,8 @@ document.addEventListener('keydown', e => {
 $('wkb').onclick = e => { const b = e.target.closest('button[data-k]'); if (b) wkey(b.dataset.k); };
 // Music: synthesized live with Web Audio, no files needed. Each game has its own track.
 const TRACKS = {
+  speed: { bpm: 150, wave: 'square', root: 64, vol: 0.07, lead: [0, 2, 4, 2, 7, 9, 7, 4, 0, 2, 4, 2, 7, null, 9, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -7, null, null, null], drums: 'k.h.k.h.k.h.k.h.' },
+  pvpet: { bpm: 132, wave: 'sawtooth', root: 45, vol: 0.06, lead: [0, 0, 7, 0, 12, 0, 7, 3, 0, 0, 5, 0, 10, 0, 7, 5], bass: [-12, null, -12, null, -12, null, -12, null, -9, null, -9, null, -7, null, -7, null], drums: 'k.s.k.s.k.s.k.s.' },
   tt: { bpm: 124, wave: 'square', root: 60, vol: 0.07, lead: [0, null, 4, null, 7, null, 4, null, 0, null, 5, null, 7, null, 5, null], bass: [-12, null, null, null, -12, null, null, null, -9, null, null, null, -7, null, null, null], drums: 'k.h.k.h.k.h.s.h.' },
   penalty: { bpm: 118, wave: 'square', root: 50, vol: 0.07, lead: [0, null, 4, null, 7, null, 4, null, 0, null, 5, null, 7, null, 9, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -8, null, null, null], drums: 'k.h.s.h.k.h.s.hk' },
   basket: { bpm: 126, wave: 'triangle', root: 57, vol: 0.08, lead: [7, null, 9, null, 12, null, 9, null, 7, null, 5, null, 4, null, 5, null], bass: [-12, null, null, null, -12, null, null, null, -10, null, null, null, -9, null, null, null], drums: 'k.s.k.s.k.s.k.s.' },
@@ -3068,6 +3104,7 @@ function showView(name) {
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   if (name === 'cos') renderCos();
   if (name === 'boba') renderBoba();
+  if (name === 'speedboard') loadSpeedLeaderboard();
   if (name === 'mystery') renderMystery();
   if (name === 'pp') $('ppExact').textContent = (state.petPoints || 0).toLocaleString();
   if (name === 'secret') renderSecret();
@@ -4923,6 +4960,7 @@ async function startMatch(duelId) {
   const { data: d } = await SB.from('duels').select('*').eq('id', duelId).single();
   if (!d) return;
   if (d.mode === 'tug') { startTug(d); return; }
+  if (d.mode === 'speed') { startSpeed(d); return; }
   const mine = d.player_a === me.id;
   const oppId = mine ? d.player_b : d.player_a;
   const myPet = (mine ? d.nick_a : d.nick_b) || PETS[mine ? d.pet_a : d.pet_b].n;
@@ -5212,8 +5250,8 @@ $('fightLeave').onclick = () => {
   $('fightResult').classList.remove('on');
   showView('boss');
 };
-$('resAgain').onclick = () => { $('fightResult').classList.remove('on'); if (resMode === 'tug') { stopTug(); joinTug(); return; } stopFight(); renderDuelPets(); showView('duelpick'); };
-$('resBoard').onclick = () => { $('fightResult').classList.remove('on'); if (resMode === 'tug') { stopTug(); loadTugLeaderboard(); showView('tugboard'); return; } stopFight(); loadLeaderboard(); showView('leaderboard'); };
+$('resAgain').onclick = () => { $('fightResult').classList.remove('on'); if (resMode === 'speed') { stopSpeed(); joinSpeed(); return; } if (resMode === 'tug') { stopTug(); joinTug(); return; } stopFight(); renderDuelPets(); showView('duelpick'); };
+$('resBoard').onclick = () => { $('fightResult').classList.remove('on'); if (resMode === 'speed') { stopSpeed(); loadSpeedLeaderboard(); showView('speedboard'); return; } if (resMode === 'tug') { stopTug(); loadTugLeaderboard(); showView('tugboard'); return; } stopFight(); loadLeaderboard(); showView('leaderboard'); };
 $('resPvp').onclick = () => { $('fightResult').classList.remove('on'); stopFight(); stopTug(); showView('boss'); };
 
 // Fight drawing helpers: the real pet art, a soft glow, and cached sprites for SVG pets.
@@ -7016,6 +7054,291 @@ function ttTick(now) {
   gx.fillText(`Rally: ${gr.rally}`, 10, 18); gx.fillText(`Misses left: ${gr.lives}`, 10, 36);
   gameFxDraw(gr.pops);
   if (!gr.over) requestAnimationFrame(ttTick);
+}
+// PET VS PET (same controls as the boss fight)
+function pvpetStakeOk() { return state.coins >= 50 && (state.pvpetToday || {}).day !== todayKey(); }
+function pvpetRoll(p) {
+  const stakes = pvpetStakeOk();
+  const opp = Math.floor(Math.random() * PETS.length);
+  let frame = 0; const total = 12;
+  const step = () => {
+    frame++;
+    const show = frame < total ? Math.floor(Math.random() * PETS.length) : opp;
+    ppOverlay(`<div class="bb-h">Your opponent...</div><div class="pvp-roll">${petHTML(show, 5)}</div><div class="bb-muted">${PETS[show].n}</div>`);
+    if (frame < total) setTimeout(step, 40 + frame * 10);
+    else setTimeout(() => pvpetStart(p, opp, stakes), 400);
+  };
+  step();
+}
+function pvMake(idx, lvl, st, isMe) {
+  return { idx, lvl, name: PETS[idx].n, hp: st.hp, maxHp: st.hp, atk: st.atk, x: isMe ? 0.22 : 0.78, air: 0, roll: 0, rollCd: 0, parryT: 0, cd: 0, swing: 0,
+    meter: 0, stun: 0, slow: 0, inv: 0, rage: 0, ls: 0, reflect: false, blocking: false, sp: SPECIALS[PETS[idx].n] || null, isMe };
+}
+function pvpetStart(p, oppIdx, stakes) {
+  $('ppOv').classList.remove('on');
+  if (stakes) { state.pvpetToday = { day: todayKey() }; save(); }
+  const mine = petStatsOf(p), theirs = petStatsOf({ idx: oppIdx, level: 5 });
+  PV = { stakes, over: false, in: {}, pressA: false, pressB: false, pressS: false, flash: [], a: pvMake(p.idx, p.level, mine, true), b: pvMake(oppIdx, 5, theirs, false) };
+  $('pvOv').innerHTML = `<div class="ovTop"><b>Pet vs Pet</b><button id="pvQuit">✕ Quit</button></div>
+    <div class="bars"><div><span>You</span><div class="hpbar"><i id="pvPHp"></i></div></div><div><span id="pvOName"></span><div class="hpbar"><i id="pvOHp" class="boss"></i></div></div></div>
+    <canvas id="pvCv"></canvas>
+    <div id="pvMsg"></div>
+    <div class="pad">
+      <div class="dpad"><button data-h="up">▲</button><button data-h="left">◀</button><button data-h="right">▶</button><button data-h="down">▼</button></div>
+      <div class="ab"><button class="b" data-h="B">B</button><button class="a" data-h="A">A</button><button class="s" data-h="S">SP</button></div>
+    </div>`;
+  $('pvOv').classList.add('on');
+  startMusic('pvpet');
+  document.querySelectorAll('#pvOv [data-h]').forEach(btn => {
+    const h = btn.dataset.h;
+    btn.addEventListener('pointerdown', e => { e.preventDefault(); if (!PV || PV.over) return; PV.in[h] = true; if (h === 'A') PV.pressA = true; if (h === 'B') PV.pressB = true; if (h === 'S') PV.pressS = true; });
+    const up = () => { if (PV) PV.in[h] = false; };
+    btn.addEventListener('pointerup', up); btn.addEventListener('pointerleave', up); btn.addEventListener('pointercancel', up);
+  });
+  $('pvQuit').onclick = () => { if (PV && !PV.over) pvEnd(false); };
+  const cv = $('pvCv'); cv.width = cv.clientWidth; cv.height = cv.clientHeight;
+  PV.ctx = cv.getContext('2d'); PV.last = performance.now();
+  requestAnimationFrame(pvTick);
+}
+function pvFlash(x, txt, col) { PV.flash.push({ x, txt, col, life: 0.8 }); }
+function pvDmg(src, dst, amt, melee) {
+  if (dst.inv > 0) { pvFlash(dst.x, 'IMMUNE', '#ffe066'); return; }
+  if (melee && dst.parryT > 0) { dst.parryT = 0; src.stun = Math.max(src.stun, 0.8); pvFlash(dst.x, 'PARRY!', '#ffe066'); return; }
+  if (dst.blocking) { pvFlash(dst.x, 'BLOCKED', '#90caf9'); return; }
+  if (dst.reflect) { dst.reflect = false; src.hp -= amt; pvFlash(src.x, `REFLECT -${Math.ceil(amt)}`, '#ffe066'); return; }
+  dst.hp -= amt;
+  pvFlash(dst.x, `-${Math.ceil(amt)}`, '#ff5252');
+  if (src.ls > 0) src.hp = Math.min(src.maxHp, src.hp + amt * 0.5);
+  dst.meter = Math.min(100, dst.meter + amt * 0.4);
+}
+function pvMelee(src, dst) {
+  if (PV.ctx && Math.abs(src.x - dst.x) * PV.ctx.canvas.width > 90) return;
+  if (dst.roll > 0) { pvFlash(dst.x, 'ROLL', '#ffffff'); return; }
+  if (dst.air > 0) { pvFlash(dst.x, 'JUMP', '#ffffff'); return; }
+  pvDmg(src, dst, src.atk * (src.rage > 0 ? 1.5 : 1), true);
+}
+function pvSpecial(src, dst) {
+  if (src.meter < 100) return;
+  src.meter = 0;
+  const sp = src.sp;
+  pvFlash(src.x, sp ? sp.n : 'Strike', '#c084fc');
+  if (!sp) { pvDmg(src, dst, src.atk * 2, false); return; }
+  switch (sp.t) {
+    case 'burst': case 'bomb': pvDmg(src, dst, src.atk * sp.v, false); break;
+    case 'heal': case 'cleanse': src.hp = Math.min(src.maxHp, src.hp + sp.v); break;
+    case 'stun': dst.stun = Math.max(dst.stun, sp.v); break;
+    case 'slow': dst.slow = sp.v; break;
+    case 'invul': src.inv = sp.v; break;
+    case 'reflect': src.reflect = true; break;
+    case 'lifesteal': src.ls = sp.v; break;
+    case 'rage': src.rage = sp.v; break;
+    case 'combo':
+      if (sp.dmg) pvDmg(src, dst, src.atk * sp.dmg, false);
+      if (sp.heal) src.hp = Math.min(src.maxHp, src.hp + sp.heal);
+      if (sp.stun) dst.stun = Math.max(dst.stun, sp.stun);
+      if (sp.inv) src.inv = sp.inv;
+      break;
+    default: pvDmg(src, dst, src.atk * 2, false);
+  }
+}
+function pvEnd(won) {
+  PV.over = true;
+  let line;
+  if (PV.stakes) { if (won) { addCoins(200); line = '+200 🪙'; } else { addCoins(-50); line = '-50 🪙'; } }
+  else line = 'Practice battle. No coins.';
+  $('pvOv').insertAdjacentHTML('beforeend', `<div class="pvp-res" style="position:absolute;inset:0;background:rgba(10,8,18,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5;padding:24px"><b>${won ? 'You won!' : 'You lost'}</b><div class="bb-muted">${line}</div><button class="bfight" id="pvBack" style="width:70%;margin-top:14px">Back</button></div>`);
+  $('pvBack').onclick = () => { $('pvOv').classList.remove('on'); stopMusic(); showView('pvpet'); };
+}
+function pvTick(now) {
+  if (!PV || !PV.ctx) return;
+  const cv = PV.ctx.canvas, W = cv.width, H = cv.height;
+  const dt = Math.min(0.05, (now - PV.last) / 1000); PV.last = now;
+  const me = PV.a, op = PV.b;
+  if (!PV.over) {
+    for (const f of [me, op]) {
+      f.meter = Math.min(100, f.meter + 6.5 * dt);
+      f.stun = Math.max(0, f.stun - dt); f.slow = Math.max(0, f.slow - dt); f.inv = Math.max(0, f.inv - dt);
+      f.rage = Math.max(0, f.rage - dt); f.ls = Math.max(0, f.ls - dt); f.cd = Math.max(0, f.cd - dt);
+      f.swing = Math.max(0, f.swing - dt); f.air = Math.max(0, f.air - dt); f.roll = Math.max(0, f.roll - dt);
+      f.rollCd = Math.max(0, f.rollCd - dt); f.parryT = Math.max(0, f.parryT - dt);
+    }
+    if (me.stun <= 0) {
+      let mv = 0; if (PV.in.left) mv -= 1; if (PV.in.right) mv += 1;
+      me.x += mv * 0.4 * dt * (me.slow > 0 ? 0.5 : 1);
+      if (PV.in.up && me.air <= 0 && me.roll <= 0) me.air = 0.5;
+      if (PV.in.down && me.rollCd <= 0 && me.air <= 0 && me.roll <= 0) { me.roll = 0.35; me.rollCd = 0.8; }
+      if (PV.pressA) { PV.pressA = false; if (me.cd <= 0) { me.cd = 0.55; me.swing = 0.25; pvMelee(me, op); } }
+      if (PV.pressS) { PV.pressS = false; pvSpecial(me, op); }
+    } else { PV.pressA = false; PV.pressS = false; }
+    if (PV.pressB) { PV.pressB = false; me.parryT = 0.15; }
+    me.blocking = !!PV.in.B && me.stun <= 0;
+    if (op.stun <= 0) {
+      const d = me.x - op.x;
+      if (Math.abs(d) * W > 90) op.x += Math.sign(d) * 0.3 * dt * (op.slow > 0 ? 0.5 : 1);
+      else if (op.cd <= 0) { op.cd = 0.9; op.swing = 0.25; pvMelee(op, me); }
+      if (op.meter >= 100 && Math.random() < 0.02) pvSpecial(op, me);
+    }
+    me.x = Math.max(0.06, Math.min(0.94, me.x)); op.x = Math.max(0.06, Math.min(0.94, op.x));
+    if (me.hp <= 0 || op.hp <= 0) pvEnd(op.hp <= 0 && me.hp > 0);
+  }
+  $('pvPHp').style.width = Math.max(0, me.hp / me.maxHp * 100) + '%';
+  $('pvOHp').style.width = Math.max(0, op.hp / op.maxHp * 100) + '%';
+  $('pvOName').textContent = op.name;
+  const floorY = H * 0.72;
+  const sky = PV.ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#2b1b3d'); sky.addColorStop(1, '#8c5a3c');
+  PV.ctx.fillStyle = sky; PV.ctx.fillRect(0, 0, W, H);
+  PV.ctx.fillStyle = '#6d5a4b'; PV.ctx.fillRect(0, floorY, W, H - floorY);
+  PV.ctx.fillStyle = '#4a3c31'; PV.ctx.fillRect(8, floorY - 120, 14, 120); PV.ctx.fillRect(W - 22, floorY - 120, 14, 120);
+  const drawFighter = f => {
+    const x = f.x * W;
+    const jump = f.air > 0 ? 50 * Math.sin(Math.PI * (f.air / 0.5)) : 0;
+    const y = floorY - 36 - jump - (f.roll > 0 ? 0 : 0);
+    drawPet(PV.ctx, f.idx, f.lvl, x, y, f.roll > 0 ? 28 : 36);
+    if (f.swing > 0) { PV.ctx.strokeStyle = '#ffffff'; PV.ctx.lineWidth = 4; PV.ctx.beginPath(); PV.ctx.arc(x, y, 50, f.isMe ? -0.9 : Math.PI - 0.9, f.isMe ? 0.9 : Math.PI + 0.9); PV.ctx.stroke(); PV.ctx.lineWidth = 1; }
+    const icons = [f.blocking ? '🛡' : '', f.parryT > 0 ? '⚡' : '', f.roll > 0 ? '💨' : '', f.stun > 0 ? '💫' : '', f.inv > 0 ? '✨' : '', f.slow > 0 ? '🐌' : ''].join('');
+    if (icons) { PV.ctx.fillStyle = '#ffffff'; PV.ctx.font = '16px system-ui'; PV.ctx.textAlign = 'center'; PV.ctx.textBaseline = 'alphabetic'; PV.ctx.fillText(icons, x, y - 52); }
+  };
+  drawFighter(me); drawFighter(op);
+  PV.flash = PV.flash.filter(f => f.life > 0);
+  for (const fl of PV.flash) { fl.life -= dt; fl.y = (fl.y || floorY - 110) - 30 * dt; PV.ctx.fillStyle = fl.col; PV.ctx.font = 'bold 16px system-ui'; PV.ctx.textAlign = 'center'; PV.ctx.fillText(fl.txt, fl.x * W, fl.y); }
+  PV.ctx.fillStyle = '#000000'; PV.ctx.fillRect(10, H - 16, 120, 8); PV.ctx.fillStyle = '#c084fc'; PV.ctx.fillRect(10, H - 16, 120 * me.meter / 100, 8);
+  if (!PV.over) requestAnimationFrame(pvTick);
+}
+$('pvpetGo').onclick = () => { if (!state.pets.length) { toast('Unlock a pet first'); return; } showPicker('Choose your pet', false, pvpetRoll); };
+$('pvpetBack').onclick = () => showView('boss');
+
+
+// SPEED TAP: both players see the same targets (same seed) and tap them as fast as they can for 20 seconds.
+let speed = null;
+async function joinSpeed() {
+  if (!SB || !me) { toast('Sign in to play Speed Tap.'); return; }
+  toast('Joining Speed Tap…');
+  try {
+    const { data, error } = await SB.rpc('find_duel', { my_pet_idx: 0, my_pet_level: 1, my_pet_nick: '', my_mode: 'speed' });
+    if (error) { toast('Queue error: ' + error.message); return; }
+    if (data) { startMatch(data); return; }
+    $('duelStatus').textContent = 'Waiting for a Speed Tap opponent…';
+    showView('duelwait');
+    watchForMatch();
+  } catch (err) { toast('Queue error: ' + err.message); }
+}
+async function startSpeed(d) {
+  stopWatch();
+  const mine = d.player_a === me.id;
+  const oppId = mine ? d.player_b : d.player_a;
+  const { data: opp } = await SB.from('public_profiles').select('username').eq('id', oppId).single();
+  const oppName = opp ? opp.username : 'Opponent';
+  const myName = state.username || 'You';
+  $('introA').textContent = myName;
+  $('introB').textContent = oppName;
+  $('introA').style.whiteSpace = 'normal';
+  $('introB').style.whiteSpace = 'normal';
+  $('duelIntro').classList.add('on');
+  setTimeout(() => { $('duelIntro').classList.remove('on'); openSpeed(d.id, oppId, myName, oppName); }, 2500);
+}
+function openSpeed(id, oppId, myName, oppName) {
+  stopSpeed();
+  resMode = 'speed';
+  startMusic('speed');
+  speed = { id, oppId, oppName, my: 0, opp: 0, go: false, ended: false, cdT: 0, tickT: 0, sendT: 0, spawnT: 0, endT: 0, k: 0, ch: null };
+  $('speedNames').textContent = `${myName} vs ${oppName}`;
+  showView('speed');
+  speedUpdate();
+  speed.ch = SB.channel('speed-' + id, { config: { broadcast: { self: false } } })
+    .on('broadcast', { event: 'count' }, ({ payload }) => {
+      if (speed && payload.u !== me.id) { speed.opp = payload.n; speedUpdate(); }
+    })
+    .subscribe();
+  speed.sendT = setInterval(() => {
+    if (speed && !speed.ended) speed.ch.send({ type: 'broadcast', event: 'count', payload: { u: me.id, n: speed.my } });
+  }, 150);
+  $('speedField').onpointerdown = e => {
+    const t = e.target.closest && e.target.closest('.sp-t');
+    if (!t || t.dataset.hit || !speed || !speed.go || speed.ended) return;
+    t.dataset.hit = '1';
+    t.style.transform = 'scale(0)';
+    speed.my++;
+    speedUpdate();
+    speed.ch.send({ type: 'broadcast', event: 'count', payload: { u: me.id, n: speed.my } });
+  };
+  let n = 3;
+  $('tugCdNum').textContent = n;
+  $('tugCd').classList.add('on');
+  speed.cdT = setInterval(() => {
+    n--;
+    if (n > 0) $('tugCdNum').textContent = n;
+    else if (n === 0) $('tugCdNum').textContent = 'GO!';
+    else {
+      clearInterval(speed.cdT);
+      $('tugCd').classList.remove('on');
+      if (speed) { speed.go = true; speed.endT = Date.now() + 20000; startSpeedClock(); speed.spawnT = setInterval(spawnSpeedTarget, 900); }
+    }
+  }, 1000);
+}
+function spawnSpeedTarget() {
+  if (!speed || !speed.go || speed.ended) return;
+  const k = speed.k++;
+  const x = secRng(speed.id + ':' + k + 'x')() * 0.8 + 0.1;
+  const y = secRng(speed.id + ':' + k + 'y')() * 0.8 + 0.1;
+  const el = document.createElement('div');
+  el.className = 'sp-t';
+  el.style.cssText = `position:absolute;left:${x * 100}%;top:${y * 100}%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:radial-gradient(circle,#fff 0 18%,#e53935 19% 45%,#fff 46% 60%,#e53935 61%);cursor:pointer;transition:transform .15s`;
+  $('speedField').appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+function startSpeedClock() {
+  speed.tickT = setInterval(() => {
+    if (!speed) return;
+    const left = Math.max(0, (speed.endT - Date.now()) / 1000);
+    $('speedTimer').textContent = Math.ceil(left) + 's';
+    if (left <= 0) finishSpeed();
+  }, 100);
+}
+function speedUpdate() {
+  if (!speed) return;
+  $('speedMe').textContent = 'You ' + speed.my;
+  $('speedOpp').textContent = speed.opp + ' ' + speed.oppName;
+}
+function finishSpeed() {
+  if (!speed || speed.ended) return;
+  speed.ended = true; speed.go = false;
+  clearInterval(speed.tickT); clearInterval(speed.sendT); clearInterval(speed.spawnT);
+  const won = speed.my > speed.opp, lost = speed.opp > speed.my;
+  const saveRes = (error) => { if (error) toast('Result not saved: ' + error.message); };
+  if (won) SB.rpc('finish_duel', { the_duel: speed.id, the_winner: me.id }).then(({ error }) => saveRes(error));
+  if (lost) SB.rpc('finish_duel', { the_duel: speed.id, the_winner: speed.oppId }).then(({ error }) => saveRes(error));
+  startMusic('home');
+  $('resTitle').textContent = won ? 'WINNER 🏆' : lost ? 'You lost' : 'Draw';
+  $('resSub').textContent = speed.my + ' – ' + speed.opp + ' hits';
+  $('fightResult').classList.add('on');
+}
+function stopSpeed() {
+  if (!speed) return;
+  startMusic('home');
+  clearInterval(speed.cdT); clearInterval(speed.tickT); clearInterval(speed.sendT); clearInterval(speed.spawnT);
+  if (speed.ch) SB.removeChannel(speed.ch);
+  speed = null;
+  $('tugCd').classList.remove('on');
+  $('speedField').innerHTML = '';
+  $('speedField').onpointerdown = null;
+  $('speedTimer').textContent = '20s';
+}
+$('speedLeave').onclick = () => {
+  if (speed && !speed.ended) { SB.rpc('finish_duel', { the_duel: speed.id, the_winner: speed.oppId }).then(({ error }) => { if (error) toast('Result not saved: ' + error.message); }); speed.ended = true; }
+  stopSpeed();
+  showView('speedmenu');
+};
+
+// SPEED TAP menu: queue and leaderboard
+$('speedQueueCard').onclick = () => joinSpeed();
+$('speedmenuBack').onclick = () => showView('boss');
+$('speedboardBack').onclick = () => showView('speedmenu');
+async function loadSpeedLeaderboard() {
+  if (!SB) { $('speedLbBox').textContent = 'Sign in to see the leaderboard.'; return; }
+  const { data, error } = await SB.from('speed_leaderboard').select('id, username, wins, losses').order('wins', { ascending: false }).limit(20);
+  if (error) { $('speedLbBox').textContent = 'Leaderboard unavailable right now.'; return; }
+  const rows = data || [];
+  $('speedLbBox').innerHTML = rows.length ? rows.map((r, i) => `<div class="ss-row"><span style="width:28px">${i + 1}</span><b style="flex:1">${r.username}</b><span>${r.wins}W ${r.losses}L</span></div>`).join('') : 'No results yet.';
 }
 </script>
 </body>
