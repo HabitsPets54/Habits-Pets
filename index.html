@@ -621,7 +621,7 @@ input { -webkit-user-select: text; user-select: text; }
   </section>
   <section class="view" id="view-speedboard">
     <div class="top"><button class="btn-soft" id="speedboardBack" style="min-width:96px">‹ Speed Tap</button><h1 style="flex:1;text-align:right;white-space:nowrap;font-size:22px;margin:0 0 0 12px">Leaderboard</h1></div>
-    <div id="speedLbBox" class="foot" style="margin-top:10px"></div>
+    <section class="card" style="padding:16px"><div id="speedLbBox"></div></section>
   </section>
   <section class="view" id="view-speed">
     <div class="top"><button class="btn-soft" id="speedLeave" style="min-width:96px">‹ Speed Tap</button><h1 style="flex:1;text-align:right;white-space:nowrap;font-size:22px;margin:0 0 0 12px">Speed Tap</h1></div>
@@ -747,7 +747,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-61';
+const APP_VERSION = '2026-11-21-63';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -5375,6 +5375,87 @@ function openTug(id, oppId, myName, oppName) {
     }
   }, 100);
 }
+let speed = null;
+let speedPoll = null, speedSeenId = null;
+async function joinSpeed() {
+  if (!SB || !me) { alert('Speed Tap: not signed in.'); return; }
+  try {
+    const { data, error } = await SB.rpc('find_speed');
+    if (error) { alert('Speed Tap queue error: ' + error.message); return; }
+    if (data && data.id) { startSpeed(data); return; }
+    $('speedWaitStatus').textContent = 'Waiting for a Speed Tap opponent…';
+    showView('speedwait');
+    watchSpeedMatch();
+  } catch (err) { alert('Speed Tap queue error: ' + err.message); }
+}
+function watchSpeedMatch() {
+  clearInterval(speedPoll);
+  speedPoll = setInterval(async () => {
+    const { data } = await SB.from('speed_matches').select('*')
+      .or(`player_a.eq.${me.id},player_b.eq.${me.id}`).is('winner', null)
+      .order('created_at', { ascending: false }).limit(1);
+    const row = data && data[0];
+    if (row && row.id !== speedSeenId && Date.now() - new Date(row.created_at).getTime() < 60000) {
+      speedSeenId = row.id;
+      clearInterval(speedPoll);
+      startSpeed(row);
+    }
+  }, 1500);
+}
+async function startSpeed(d) {
+  clearInterval(speedPoll);
+  stopWatch();
+  const mine = d.player_a === me.id;
+  const oppId = mine ? d.player_b : d.player_a;
+  const { data: opp } = await SB.from('public_profiles').select('username').eq('id', oppId).single();
+  const oppName = opp ? opp.username : 'Opponent';
+  const myName = state.username || 'You';
+  $('introA').textContent = myName;
+  $('introB').textContent = oppName;
+  $('introA').style.whiteSpace = 'normal';
+  $('introB').style.whiteSpace = 'normal';
+  $('duelIntro').classList.add('on');
+  const T0 = Date.parse(d.created_at) + 6000;
+  setTimeout(() => { $('duelIntro').classList.remove('on'); openSpeed(d.id, oppId, myName, oppName, T0); }, 2500);
+}
+function openSpeed(id, oppId, myName, oppName, T0) {
+  stopSpeed();
+  resMode = 'speed';
+  startMusic('speed');
+  speed = { id, oppId, oppName, my: 0, opp: 0, go: false, ended: false, ch: null, cdT: null, tickT: null, sendT: null, spawnT: null, endT: 0, T0, spawned: 0 };
+  $('speedNames').textContent = `${myName} vs ${oppName}`;
+  showView('speed');
+  speedUpdate();
+  speed.ch = SB.channel('speed-' + id, { config: { broadcast: { self: false } } })
+    .on('broadcast', { event: 'count' }, ({ payload }) => {
+      if (speed && payload.u !== me.id) { speed.opp = payload.n; speedUpdate(); }
+    })
+    .subscribe();
+  speed.sendT = setInterval(() => {
+    if (speed && !speed.ended) speed.ch.send({ type: 'broadcast', event: 'count', payload: { u: me.id, n: speed.my } });
+  }, 150);
+  $('speedField').onpointerdown = e => {
+    const t = e.target.closest && e.target.closest('.sp-t');
+    if (!t || t.dataset.hit || !speed || !speed.go || speed.ended) return;
+    t.dataset.hit = '1';
+    t.style.transform = 'scale(0)';
+    speed.my++;
+    speedUpdate();
+    speed.ch.send({ type: 'broadcast', event: 'count', payload: { u: me.id, n: speed.my } });
+  };
+  speed.endT = T0 + 20000; speed.spawned = 0;
+  speed.cdT = setInterval(() => {
+    if (!speed) return;
+    const now = Date.now(), remain = T0 - now;
+    if (remain > 0) { $('tugCdNum').textContent = Math.ceil(remain / 1000); $('tugCd').classList.add('on'); }
+    else if (remain > -700) { $('tugCdNum').textContent = 'GO!'; $('tugCd').classList.add('on'); }
+    else $('tugCd').classList.remove('on');
+    if (!speed.go && now >= T0) { speed.go = true; startSpeedClock(); }
+    if (speed.go && !speed.ended) {
+      while (T0 + speed.spawned * 900 <= now) { spawnSpeedTarget(speed.spawned); speed.spawned++; }
+    }
+  }, 100);
+}
 function spawnSpeedTarget(k) {
   if (!speed || speed.ended) return;
   const x = secRng(speed.id + ':' + k + 'x')() * 0.8 + 0.1;
@@ -5432,13 +5513,29 @@ $('speedmenuBack').onclick = () => showView('boss');
 $('speedboardBack').onclick = () => showView('speedmenu');
 $('speedwaitBack').onclick = () => { clearInterval(speedPoll); showView('speedmenu'); };
 $('view-speedmenu').onclick = e => { const b = e.target.closest('[data-go]'); if (b) showView(b.dataset.go); };
+let speedRows = [];
 async function loadSpeedLeaderboard() {
   if (!SB) { $('speedLbBox').textContent = 'Sign in to see the leaderboard.'; return; }
   const { data, error } = await SB.from('speed_leaderboard').select('id, username, wins, losses').order('wins', { ascending: false }).limit(20);
   if (error) { $('speedLbBox').textContent = 'Leaderboard unavailable right now.'; return; }
   const rows = data || [];
-  $('speedLbBox').innerHTML = rows.length ? rows.map((r, i) => `<div class="ss-row"><span style="width:28px">${i + 1}</span><b style="flex:1">${r.username}</b><span>${r.wins}W ${r.losses}L</span></div>`).join('') : 'No results yet.';
+  const avatars = {};
+  if (rows.length) {
+    const { data: prof } = await SB.from('public_profiles').select('id, avatar').in('id', rows.map(r => r.id));
+    (prof || []).forEach(p => { avatars[p.id] = p.avatar; });
+  }
+  speedRows = rows.map(r => ({ ...r, avatar: avatars[r.id] || null }));
+  $('speedLbBox').innerHTML = speedRows.length ? speedRows.map((r, i) => `<button class="btn-soft" data-slb="${i}" style="width:100%;display:flex;align-items:center;gap:10px;margin:6px 0;text-align:left"><span style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--card);display:flex;align-items:center;justify-content:center;flex:none">${r.avatar ? `<img src="${r.avatar}" style="width:100%;height:100%;object-fit:cover">` : '🙂'}</span><span style="flex:1;font-weight:700">${i + 1}. ${r.username}${me && r.id === me.id ? ' (you)' : ''}</span><span>${r.wins}W · ${r.losses}L</span></button>`).join('') : 'No Speed Tap matches yet. Be the first!';
 }
+$('speedLbBox').onclick = e => {
+  const b = e.target.closest('[data-slb]');
+  if (!b) return;
+  const r = speedRows[Number(b.dataset.slb)];
+  $('lbAvatar').innerHTML = r.avatar ? `<img src="${r.avatar}" style="width:100%;height:100%;object-fit:cover">` : '🙂';
+  $('lbName').textContent = r.username;
+  $('lbRecord').textContent = `${r.wins} wins · ${r.losses} losses`;
+  $('lbProfile').classList.add('on');
+};
 </script>
 </body>
 </html>
