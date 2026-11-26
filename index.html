@@ -745,7 +745,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-58';
+const APP_VERSION = '2026-11-21-59';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -7211,6 +7211,7 @@ $('pvpetBack').onclick = () => showView('boss');
 // SPEED TAP: both players see the same targets (same seed) and tap them as fast as they can for 20 seconds.
 let speed = null;
 async function joinSpeed() {
+  toast('Speed Tap matchmaking is being set up. Coming soon.'); return;
   if (!SB || !me) { toast('Sign in to play Speed Tap.'); return; }
   toast('Joining Speed Tap…');
   try {
