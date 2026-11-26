@@ -745,7 +745,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-59';
+const APP_VERSION = '2026-11-21-60';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -7210,20 +7210,35 @@ $('pvpetBack').onclick = () => showView('boss');
 
 // SPEED TAP: both players see the same targets (same seed) and tap them as fast as they can for 20 seconds.
 let speed = null;
+let speedPoll = null, speedSeenId = null;
 async function joinSpeed() {
-  toast('Speed Tap matchmaking is being set up. Coming soon.'); return;
   if (!SB || !me) { toast('Sign in to play Speed Tap.'); return; }
-  toast('Joining Speed Tap…');
+  toast('Looking for a player…');
   try {
-    const { data, error } = await SB.rpc('find_duel', { my_pet_idx: 0, my_pet_level: 1, my_pet_nick: '', my_mode: 'speed' });
+    const { data, error } = await SB.rpc('find_speed');
     if (error) { toast('Queue error: ' + error.message); return; }
-    if (data) { startMatch(data); return; }
+    if (data && data.id) { startSpeed(data); return; }
     $('duelStatus').textContent = 'Waiting for a Speed Tap opponent…';
     showView('duelwait');
-    watchForMatch();
+    watchSpeedMatch();
   } catch (err) { toast('Queue error: ' + err.message); }
 }
+function watchSpeedMatch() {
+  clearInterval(speedPoll);
+  speedPoll = setInterval(async () => {
+    const { data } = await SB.from('speed_matches').select('*')
+      .or(`player_a.eq.${me.id},player_b.eq.${me.id}`).is('winner', null)
+      .order('created_at', { ascending: false }).limit(1);
+    const row = data && data[0];
+    if (row && row.id !== speedSeenId && Date.now() - new Date(row.created_at).getTime() < 60000) {
+      speedSeenId = row.id;
+      clearInterval(speedPoll);
+      startSpeed(row);
+    }
+  }, 1500);
+}
 async function startSpeed(d) {
+  clearInterval(speedPoll);
   stopWatch();
   const mine = d.player_a === me.id;
   const oppId = mine ? d.player_b : d.player_a;
@@ -7305,9 +7320,7 @@ function finishSpeed() {
   speed.ended = true; speed.go = false;
   clearInterval(speed.tickT); clearInterval(speed.sendT); clearInterval(speed.spawnT);
   const won = speed.my > speed.opp, lost = speed.opp > speed.my;
-  const saveRes = (error) => { if (error) toast('Result not saved: ' + error.message); };
-  if (won) SB.rpc('finish_duel', { the_duel: speed.id, the_winner: me.id }).then(({ error }) => saveRes(error));
-  if (lost) SB.rpc('finish_duel', { the_duel: speed.id, the_winner: speed.oppId }).then(({ error }) => saveRes(error));
+  SB.rpc('submit_speed_hits', { p_match: speed.id, p_hits: speed.my }).then(({ error }) => { if (error) toast('Result not saved: ' + error.message); });
   startMusic('home');
   $('resTitle').textContent = won ? 'WINNER 🏆' : lost ? 'You lost' : 'Draw';
   $('resSub').textContent = speed.my + ' – ' + speed.opp + ' hits';
@@ -7325,7 +7338,7 @@ function stopSpeed() {
   $('speedTimer').textContent = '20s';
 }
 $('speedLeave').onclick = () => {
-  if (speed && !speed.ended) { SB.rpc('finish_duel', { the_duel: speed.id, the_winner: speed.oppId }).then(({ error }) => { if (error) toast('Result not saved: ' + error.message); }); speed.ended = true; }
+  if (speed && !speed.ended) { SB.rpc('submit_speed_hits', { p_match: speed.id, p_hits: -1 }); speed.ended = true; }
   stopSpeed();
   showView('speedmenu');
 };
