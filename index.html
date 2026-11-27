@@ -747,7 +747,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-63';
+const APP_VERSION = '2026-11-21-64';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -1088,14 +1088,14 @@ const COIN_IDS = ['coins1', 'coins2', 'coins3', 'coins4', 'coins6', 'cosCoins', 
 function setCoinsUI() { COIN_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = fmtCoins(state.coins); }); const ex = document.getElementById('coinsExact'); if (ex) ex.textContent = state.coins.toLocaleString(); }
 function addCoins(n) { state.coins = Math.max(0, state.coins + n); if (n > 0) { stat('coinsEarned', n); sfx('coin'); } save(); setCoinsUI(); checkAch(); }
 // In-game counter: Pet Points for the Pet Points games, coins for the rest
-let ppGameOn = false;
+var ppGameOn = false;
 function syncGameCounter() {
   const el = document.getElementById('gameCoins');
   if (!el) return;
   el.parentElement.innerHTML = ppGameOn ? `🐾 <b id="gameCoins">${fmtCoins(state.petPoints || 0)}</b>` : `🪙 <b id="gameCoins">${fmtCoins(state.coins)}</b>`;
 }
 const _ppSetCoinsUI = setCoinsUI;
-setCoinsUI = function () { _ppSetCoinsUI(); syncGameCounter(); };
+setCoinsUI = function () { _ppSetCoinsUI(); try { syncGameCounter(); } catch (e) {} };
 function sizeGame() { const r = devicePixelRatio || 1; gameCv.width = gameCv.clientWidth * r; gameCv.height = gameCv.clientHeight * r; gx.setTransform(r, 0, 0, r, 0, 0); }
 function startGame(id) {
   $('ctl').style.display = 'none';
