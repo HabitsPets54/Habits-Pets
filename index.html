@@ -747,7 +747,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-65';
+const APP_VERSION = '2026-11-21-66';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -825,6 +825,14 @@ const todayKey = () => {
 function fresh() {
   return { coins: 0, pets: [{ idx: 0, level: 1 }], active: 0, day: null, quests: [], done: {} };
 }
+function fixStartValues(st) {
+  if (st && st.coinsFix !== 1) {
+    if (st.coins === 1000000) st.coins = 0;
+    if (st.petPoints === 1000000) st.petPoints = 0;
+    st.coinsFix = 1;
+  }
+  return st;
+}
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
@@ -835,7 +843,7 @@ function load() {
       if (!s.pets.length) s.pets = [{ idx: 0, level: 1 }];
       s.pets.forEach(p => p.level = Math.min(p.level, MAX_LEVEL));
       s.active = Math.min(s.active, s.pets.length - 1);
-      return s;
+      return fixStartValues(s);
     }
   } catch (e) {}
   return fresh();
@@ -4747,7 +4755,7 @@ async function authDone() {
   const { data: row } = await SB.from('profiles').select('username, save').eq('id', me.id).single();
   const cloud = row && row.save && Object.keys(row.save).length ? row.save : null;
   const sameOwner = state.owner === me.id;
-  if (cloud && (!sameOwner || (cloud.savedAt || 0) > (state.savedAt || 0))) { state = { ...fresh(), ...cloud }; }
+  if (cloud && (!sameOwner || (cloud.savedAt || 0) > (state.savedAt || 0))) { state = fixStartValues({ ...fresh(), ...cloud }); }
   state.owner = me.id;
   if (row) state.username = row.username;
   if (state.avatar && SB) { const { error: ae } = await SB.from('profiles').update({ avatar: state.avatar }).eq('id', me.id); if (ae) toast('Photo not saved: ' + ae.message); }
@@ -5538,22 +5546,9 @@ $('speedLbBox').onclick = e => {
 };
 
 // RESTORED: code that was accidentally removed
-gameCv.onpointerdown = e => {
-  if (!gr) return;
-  if (gr.over) return;
-  if (gr.id === 'duck' || gr.id === 'zombie') { gameTap(e); return; }
-  if (gr.id === 'blast') { blastDown(e); return; }
-  if (gr.id === 'candy') { candyDown(e); return; }
-  if (gr.id === 'memory') { memoryTap(e); return; }
-  if (gr.id === 'mines') { minesDown(e); return; }
-  if (gr.id === 'sniper') { sniperTap(e); return; }
-  if (gr.id === 'alien') { gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; return; }
-  if (gr.id === 'flappy') { flappyTap(); return; }
-  if (gr.id === 'shoot') { gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; gr.downX = gr.pointer; gr.aim = Math.max(-1.35, Math.min(1.35, Math.atan((gr.pointer - gameCv.clientWidth / 2) / (gameCv.clientHeight * 0.35)))); return; }
-  gr.pointer = e.clientX - gameCv.getBoundingClientRect().left;
-};
 
-gameCv.onpointermove = e => { if (gr && gr.id === 'blast') { blastMove(e); return; } if (gr && gr.id === 'candy') { candyMove(e); return; } if (gr && gr.pointer !== null) gr.pointer = e.clientX - gameCv.getBoundingClientRect().left; };
+
+
 
 $('toShopMb').onclick = () => showView('shop');
 
@@ -5563,19 +5558,11 @@ document.addEventListener('click', e => {
   showView('coins');
 });
 
-renderGames = function () {
-  const box = $('gameList');
-  if (!gameCat) {
-    box.innerHTML = GAME_CATS.map(cat => `<button class='shopCard' data-cat='${cat}'><div class='sc-ico'>${CAT_ICO[cat]}</div><div><b>${cat}</b><div class='sub'>${CAT_SUB[cat]}</div></div></button>`).join('');
-    return;
-  }
-  const cards = Object.entries(GAME_CARDS).filter(([id, g]) => g.cat === gameCat).map(([id, g]) => `<div class='game'><div class='ico'>${g.ico}</div><div class='info'><b>${g.name}</b><span>${g.desc}</span></div><button class='play' data-game='${id}'>Play</button></div>`).join('');
-  box.innerHTML = `<button class='btn-soft' data-cat='back' style='margin-bottom:12px'>‹ Games</button>` + cards;
-};
 
-$('resAgain').onclick = () => { $('fightResult').classList.remove('on'); if (resMode === 'tug') { stopTug(); joinTug(); return; } stopFight(); renderDuelPets(); showView('duelpick'); };
 
-$('resBoard').onclick = () => { $('fightResult').classList.remove('on'); if (resMode === 'tug') { stopTug(); loadTugLeaderboard(); showView('tugboard'); return; } stopFight(); loadLeaderboard(); showView('leaderboard'); };
+
+
+
 
 function startTugClock() {
   tug.tickT = setInterval(() => {
