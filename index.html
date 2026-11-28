@@ -747,7 +747,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-64';
+const APP_VERSION = '2026-11-21-65';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -5538,10 +5538,6 @@ $('speedLbBox').onclick = e => {
 };
 
 // RESTORED: code that was accidentally removed
-state.coins = 1000000;
-
-state.petPoints = 1000000;
-
 gameCv.onpointerdown = e => {
   if (!gr) return;
   if (gr.over) return;
