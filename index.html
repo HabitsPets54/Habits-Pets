@@ -747,7 +747,7 @@ function pairFor(i) { return GIM_PAIRS[(i * 37) % GIM_PAIRS.length]; }
 function hasMech(b, id) { return !!(b && b.mechs && b.mechs.includes(id)); }
 function mechLabel(b) { return (b.mechs || []).map(id => GIM[id].label).join(' + '); }
 
-const APP_VERSION = '2026-11-21-66';
+const APP_VERSION = '2026-11-21-68';
 const KEY = "habitpets.v2";
 const REWARD = 25;
 const MAX_LEVEL = 5;
@@ -825,11 +825,12 @@ const todayKey = () => {
 function fresh() {
   return { coins: 0, pets: [{ idx: 0, level: 1 }], active: 0, day: null, quests: [], done: {} };
 }
+// One-time currency reset: every save gets coins and Pet Points set to 0 once.
 function fixStartValues(st) {
-  if (st && st.coinsFix !== 1) {
-    if (st.coins === 1000000) st.coins = 0;
-    if (st.petPoints === 1000000) st.petPoints = 0;
-    st.coinsFix = 1;
+  if (st && st.currencyReset !== 2) {
+    st.coins = 0;
+    st.petPoints = 0;
+    st.currencyReset = 2;
   }
   return st;
 }
@@ -1233,7 +1234,7 @@ gameCv.onpointermove = e => { if (gr && gr.id === 'blast') { blastMove(e); retur
 const endPointer = () => { if (gr && gr.id === 'shoot' && gr.downX !== undefined) { gr.fire = true; gr.downX = undefined; } if (gr) { gr.pointer = null; gr.drag = null; } };
 gameCv.onpointerup = endPointer;
 gameCv.onpointercancel = endPointer;
-$('gameClose').onclick = () => { gr = null; startMusic('home'); $('gameOv').classList.remove('on'); render(); };
+$('gameClose').onclick = () => { gr = null; ppGameOn = false; startMusic('home'); $('gameOv').classList.remove('on'); render(); };
 const CANDY_COLS = ['#ff5f7e', '#ffd23f', '#5ee6a8', '#5ab4ff', '#c58bff'];
 const randK = () => Math.floor(Math.random() * 5);
 function newBoard() {
@@ -7050,7 +7051,7 @@ function ppAdd(n) { state.petPoints = (state.petPoints || 0) + n; save(); syncGa
 function ppDayOk(k) { state.ppDay = state.ppDay || {}; return state.ppDay[k] !== todayKey(); }
 function ppDayMark(k) { state.ppDay = state.ppDay || {}; state.ppDay[k] = todayKey(); save(); }
 function ppOverlay(html) { const ov = $('ppOv'); ov.classList.remove('pg-scroll'); ov.innerHTML = `<div class="pg-wrap">${html}</div>`; ov.classList.add('on'); }
-function ppClose() { $('ppOv').classList.remove('on'); $('ppOv').onclick = null; stopMusic(); renderGames(); }
+function ppClose() { $('ppOv').classList.remove('on'); $('ppOv').onclick = null; ppGameOn = false; stopMusic(); renderGames(); }
 function showPicker(title, dirty, onPick) {
   const owned = state.pets;
   ppOverlay(`<div class="bb-h">${title}</div><div class="pg-grid">${owned.map((p, i) => `<button class="pg-pick" data-i="${i}"><div class="face ${dirty ? 'pg-dirty' : ''}">${petHTML(p.idx, p.level)}</div><small>${PETS[p.idx].n}</small></button>`).join('')}</div><button class="btn-soft" id="pgBack">‹ Back</button>`);
@@ -7060,6 +7061,7 @@ function showPicker(title, dirty, onPick) {
 }
 function ppSetup(id, title, msg, music) {
   gr = { id, t: 0, last: performance.now(), over: false, earned: 0, pops: [], pointer: null, lives: 3 };
+  ppGameOn = true;
   $('gameOv').classList.add('on'); $('loseBox').classList.remove('on'); gameCv.style.display = ''; $('wordBox').style.display = 'none';
   $('gameTitle').textContent = title; $('gameMsg').textContent = msg;
   sizeGame(); startMusic(music); syncGameCounter();
@@ -7069,6 +7071,7 @@ function startGroom() {
   if (!ppDayOk('groom')) { toast('Pet Groom is once a day. Come back tomorrow.'); return; }
   if (!state.pets.length) { toast('Unlock a pet first'); return; }
   startMusic('groom');
+  ppGameOn = true;
   showPicker('Choose a pet to groom', true, groomStart);
 }
 function groomStart(p) {
@@ -7109,6 +7112,7 @@ function startHide() {
   if (!ppDayOk('hide')) { toast('Hide and Seek is once a day. Come back tomorrow.'); return; }
   if (!state.pets.length) { toast('Unlock a pet first'); return; }
   startMusic('hide');
+  ppGameOn = true;
   showPicker('Choose a pet to hide', false, hideCountdown);
 }
 function hideCountdown(p) {
